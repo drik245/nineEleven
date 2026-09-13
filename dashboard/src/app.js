@@ -326,7 +326,7 @@ window.openPayModal = function(key, index) {
     // Generate QR code
     const qrContainer = document.getElementById('qrContainer');
     qrContainer.innerHTML = '';
-    const upiString = `upi://pay?pa=vendor@upi&pn=SweetMachine&am=${item.price}&cu=INR&tn=${item.name}`;
+    const upiString = `upi://pay?pa=vendor@upi&pn=nineEleven&am=${item.price}&cu=INR&tn=${item.name}`;
     const qr = qrcode(0, 'M');
     qr.addData(upiString);
     qr.make();

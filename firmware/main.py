@@ -222,7 +222,7 @@ def process_web_orders():
 
 
 # ── Boot sequence ─────────────────────────────────────────────────────────
-print("=== Vending Machine — Shrike Fi ===")
+print("=== nineEleven — Shrike Fi ===")
 
 wifi_ok = wifi.connect(oled)
 

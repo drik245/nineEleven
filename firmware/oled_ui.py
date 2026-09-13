@@ -23,7 +23,7 @@ def show_idle(oled, cursor, stock=None):
     stock: list of ints (qty per candy), or None to hide stock.
 
     +-------------------+
-    |  VENDING MACHINE  |
+    |  nineEleven       |
     |-------------------|
     | > Candy A  Rs5 x8 |   ← cursor
     |   Candy B Rs10 x3 |
@@ -33,7 +33,7 @@ def show_idle(oled, cursor, stock=None):
     """
     oled.fill(0)
 
-    title = "VENDING MACHINE"
+    title = "nineEleven"
     oled.text(title, _center_x(title), 0)
     oled.hline(0, 10, 128, 1)
 

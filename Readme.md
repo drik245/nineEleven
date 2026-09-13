@@ -1,4 +1,4 @@
-# 🍬 Smart Candy Vending Machine
+# 🍬 nineEleven
 
 A coin-operated + web-enabled candy vending machine built on the **Vicharak Shrike Fi (ESP32-S3)** running MicroPython. Features a 3D consumer web dashboard, Firebase realtime sync, dummy UPI payment, and a physical OLED + button interface.
 
