@@ -480,7 +480,3 @@ Hold time          = 600ms
 | Restock combo not working | Must be in IDLE state. Press exactly: UP → DOWN → LEFT → RIGHT → SELECT |
 
 ---
-
-## 📄 License
-
-Internal project — Vicharak 2026
