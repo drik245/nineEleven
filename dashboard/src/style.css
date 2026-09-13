@@ -1,0 +1,632 @@
+/* style.css — Consumer-facing Candy Vending Machine Dashboard
+   Light, jolly, playful theme with pastel colors and fun vibes */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg: #fef9f0;
+    --bg-warm: #fff5e6;
+    --card-bg: #ffffff;
+    --text: #3d2c2e;
+    --text-light: #7a6466;
+    --text-muted: #b8a0a3;
+    --pink: #ff7eb3;
+    --pink-light: #ffe0ed;
+    --purple: #a78bfa;
+    --purple-light: #ede9fe;
+    --mint: #6ee7b7;
+    --mint-light: #d1fae5;
+    --peach: #fbbf24;
+    --peach-light: #fef3c7;
+    --blue: #7dd3fc;
+    --blue-light: #e0f2fe;
+    --coral: #fb923c;
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.1);
+    --shadow-candy: 0 8px 30px rgba(255,126,179,0.15);
+    --radius: 20px;
+    --radius-lg: 28px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Nunito', 'Fredoka', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ── Background decoration ─────────────────────────────────────────── */
+body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,126,179,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    animation: floatBubble 15s ease-in-out infinite alternate;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    left: -15%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(167,139,250,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    animation: floatBubble 18s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes floatBubble {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, -40px) scale(1.1); }
+}
+
+/* ── Header ────────────────────────────────────────────────────────── */
+.header {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem;
+}
+
+.header h1 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--pink), var(--purple), var(--coral));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.header .subtitle {
+    font-size: 1.05rem;
+    color: var(--text-light);
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+
+.header .emoji-bar {
+    font-size: 1.5rem;
+    margin-top: 0.5rem;
+    letter-spacing: 0.3em;
+}
+
+/* ── Status pill ───────────────────────────────────────────────────── */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.8rem;
+    background: var(--mint-light);
+    color: #047857;
+    transition: all 0.3s ease;
+}
+
+.status-pill.offline {
+    background: var(--pink-light);
+    color: #be185d;
+}
+
+.status-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: blink 2s ease-in-out infinite;
+}
+
+.status-pill.offline .dot {
+    background: #f43f5e;
+    animation: none;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ── Config banner ─────────────────────────────────────────────────── */
+.config-banner {
+    max-width: 600px;
+    margin: 1.5rem auto;
+    padding: 1.2rem 1.5rem;
+    background: var(--peach-light);
+    border-radius: var(--radius);
+    border: 2px dashed var(--peach);
+    text-align: center;
+}
+
+.config-banner.hidden { display: none; }
+
+.config-banner p {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #92400e;
+    margin-bottom: 0.75rem;
+}
+
+.config-banner input {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    background: white;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.2s;
+}
+
+.config-banner input:focus { border-color: var(--pink); }
+
+.config-banner button {
+    padding: 0.5rem 2rem;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.config-banner button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-candy);
+}
+
+/* ── Main layout ───────────────────────────────────────────────────── */
+.main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+/* ── 3D Vending Machine Canvas ─────────────────────────────────────── */
+.vending-scene {
+    width: 100%;
+    aspect-ratio: 3/4;
+    max-height: 550px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--blue-light), var(--purple-light));
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+.vending-scene canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* ── Candy Cards ───────────────────────────────────────────────────── */
+.candy-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.candy-section-title {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    padding-left: 0.5rem;
+}
+
+.candy-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid transparent;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.candy-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-candy);
+    border-color: var(--pink-light);
+}
+
+.candy-card.sold-out {
+    opacity: 0.6;
+    filter: grayscale(0.3);
+}
+
+.candy-card.sold-out:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.candy-card .candy-img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    flex-shrink: 0;
+    animation: candyBounce 3s ease-in-out infinite;
+}
+
+@keyframes candyBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-4px) rotate(2deg); }
+    75% { transform: translateY(2px) rotate(-1deg); }
+}
+
+.candy-card:nth-child(2) .candy-img { animation-delay: 0.5s; }
+.candy-card:nth-child(3) .candy-img { animation-delay: 1s; }
+
+.candy-info {
+    flex: 1;
+}
+
+.candy-name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.candy-price {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--pink);
+    margin-top: 0.15rem;
+}
+
+.candy-stock {
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-top: 0.3rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 100px;
+    display: inline-block;
+}
+
+.candy-stock.high   { background: var(--mint-light); color: #047857; }
+.candy-stock.mid    { background: var(--peach-light); color: #92400e; }
+.candy-stock.low    { background: var(--pink-light); color: #be185d; }
+
+.candy-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.btn-buy {
+    padding: 0.6rem 1.5rem;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(255,126,179,0.3);
+}
+
+.btn-buy:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 20px rgba(255,126,179,0.4);
+}
+
+.btn-buy:disabled {
+    background: #d1d5db;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sold-out-badge {
+    display: none;
+    padding: 0.4rem 1rem;
+    background: var(--pink-light);
+    color: #be185d;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.candy-card.sold-out .btn-buy { display: none; }
+.candy-card.sold-out .sold-out-badge { display: block; }
+
+/* ── Toast ─────────────────────────────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 0.8rem 1.5rem;
+    background: var(--text);
+    color: white;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 200;
+    box-shadow: var(--shadow-lg);
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* ── Payment overlay ───────────────────────────────────────────────── */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.pay-modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.overlay.active .pay-modal {
+    transform: scale(1) translateY(0);
+}
+
+.pay-modal h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.3rem;
+}
+
+.pay-modal .pay-candy-name {
+    color: var(--pink);
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.pay-modal .pay-amount {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0.75rem 0;
+}
+
+.qr-container {
+    background: white;
+    padding: 1rem;
+    border-radius: 16px;
+    border: 2px solid #f3f4f6;
+    display: inline-block;
+    margin: 0.75rem 0;
+}
+
+.qr-container canvas { display: block; }
+
+.pay-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.pay-divider::before,
+.pay-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.btn-upi {
+    width: 100%;
+    padding: 0.8rem;
+    background: linear-gradient(135deg, #5b21b6, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+.btn-upi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+}
+
+.btn-close-modal {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.5rem;
+    background: transparent;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    color: var(--text-light);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+/* ── Payment confirmation overlay ──────────────────────────────────── */
+.confirm-modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.overlay.active .confirm-modal {
+    transform: scale(1);
+}
+
+.confirm-modal .confirm-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.confirm-modal h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 0.3rem;
+}
+
+.confirm-modal .confirm-details {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.confirm-modal .confirm-amount {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--pink);
+    margin-bottom: 1.5rem;
+}
+
+.btn-confirm-pay {
+    width: 100%;
+    padding: 0.9rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    margin-bottom: 0.5rem;
+}
+
+.btn-confirm-pay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-confirm-pay:disabled {
+    background: #d1d5db;
+    box-shadow: none;
+    cursor: wait;
+}
+
+/* ── Success animation ─────────────────────────────────────────────── */
+.success-modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+}
+
+.success-modal .success-icon {
+    font-size: 4rem;
+    animation: successPop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes successPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+.success-modal h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1.5rem;
+    color: #059669;
+    margin-top: 0.5rem;
+}
+
+.success-modal p {
+    color: var(--text-light);
+    margin-top: 0.5rem;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+    .header h1 { font-size: 2rem; }
+    .vending-scene { max-height: 350px; aspect-ratio: 4/3; }
+    .candy-card { padding: 1rem; }
+    .candy-card .candy-img { width: 55px; height: 55px; }
+}

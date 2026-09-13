@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Vending Machine — Pick Your Sweet!</title>
+    <meta name="description" content="Buy candy from our smart vending machine. Pay with UPI, scan QR, and enjoy instant dispensing!">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ── Header ──────────────────────────────────────────────── -->
+    <header class="header">
+        <h1>🍬 Sweet Machine</h1>
+        <p class="subtitle">Pick a candy, tap to pay, enjoy!</p>
+        <div class="emoji-bar">🍭 🍫 🍬</div>
+        <div class="status-pill" id="statusPill">
+            <span class="dot"></span>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </header>
+
+    <!-- ── Firebase Config (shown when not configured) ─────────── -->
+    <div class="config-banner" id="configBanner">
+        <p>🔗 Enter your Firebase Realtime Database URL to connect</p>
+        <input type="text" id="firebaseUrlInput"
+               placeholder="https://your-project-default-rtdb.firebaseio.com">
+        <br>
+        <button onclick="connectFirebase()">Connect</button>
+    </div>
+
+    <!-- ── Main Content ────────────────────────────────────────── -->
+    <main class="main-content" id="mainContent" style="display:none;">
+
+        <!-- 3D Vending Machine -->
+        <div class="vending-scene" id="vendingScene"></div>
+
+        <!-- Candy Cards -->
+        <section class="candy-section">
+            <h2 class="candy-section-title">🍭 Pick Your Candy</h2>
+            <div id="candyList">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ── Payment Modal ───────────────────────────────────────── -->
+    <div class="overlay" id="payOverlay">
+        <div class="pay-modal">
+            <h2>💳 Pay for your candy</h2>
+            <p class="pay-candy-name" id="payCandyName"></p>
+            <div class="pay-amount" id="payAmount"></div>
+
+            <div class="qr-container" id="qrContainer">
+                <!-- QR rendered here -->
+            </div>
+
+            <div class="pay-divider">OR</div>
+
+            <button class="btn-upi" id="btnPayUpi" onclick="showConfirmation()">
+                Pay with UPI
+            </button>
+
+            <button class="btn-close-modal" onclick="closePayModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ── Payment Confirmation Modal ──────────────────────────── -->
+    <div class="overlay" id="confirmOverlay">
+        <div class="confirm-modal">
+            <div class="confirm-icon">📱</div>
+            <h2>Confirm Payment</h2>
+            <p class="confirm-details" id="confirmDetails">Pay for Candy A</p>
+            <div class="confirm-amount" id="confirmAmount">₹5</div>
+            <button class="btn-confirm-pay" id="btnConfirmPay" onclick="processPayment()">
+                ✓ Confirm & Pay
+            </button>
+            <button class="btn-close-modal" onclick="closeConfirmModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ── Success Modal ───────────────────────────────────────── -->
+    <div class="overlay" id="successOverlay">
+        <div class="success-modal">
+            <div class="success-icon">🎉</div>
+            <h2>Payment Successful!</h2>
+            <p id="successMsg">Your candy is being dispensed...</p>
+            <button class="btn-close-modal" onclick="closeSuccessModal()" style="margin-top:1.5rem;">Done</button>
+        </div>
+    </div>
+
+    <!-- ── Toast ───────────────────────────────────────────────── -->
+    <div class="toast" id="toast"></div>
+
+    <footer class="footer">
+        Made with 🍬 — Smart Vending Machine powered by Firebase
+    </footer>
+
+    <!-- ── Scripts ─────────────────────────────────────────────── -->
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- QR Code Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <!-- Firebase SDK (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <!-- App Logic -->
+    <script src="app.js"></script>
+
+</body>
+</html>
