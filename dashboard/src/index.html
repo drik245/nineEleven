@@ -3,110 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nineEleven — Pick Your Sweet!</title>
-    <meta name="description" content="Buy candy from nineEleven. Pay with UPI, scan QR, and enjoy instant dispensing!">
+    <title>🍬 NineEleven — Sweet Treats!</title>
+    <meta name="description" content="Pick your favorite candy, scan to pay, and enjoy instant vending magic!">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- ── Header ──────────────────────────────────────────────── -->
-    <header class="header">
-        <h1>🍬 nineEleven</h1>
-        <p class="subtitle">Pick a candy, tap to pay, enjoy!</p>
-        <div class="emoji-bar">🍭 🍫 🍬</div>
-        <div class="status-pill" id="statusPill">
-            <span class="dot"></span>
-            <span id="statusText">Connecting...</span>
-        </div>
-    </header>
+    <!-- Floating Candy Particles -->
+    <div class="particles" id="particles"></div>
 
-    <!-- ── Firebase Config (shown when not configured) ─────────── -->
-    <div class="config-banner" id="configBanner">
-        <p>🔗 Enter your Firebase Realtime Database URL to connect</p>
-        <input type="text" id="firebaseUrlInput"
-               placeholder="https://your-project-default-rtdb.firebaseio.com">
-        <br>
-        <button onclick="connectFirebase()">Connect</button>
+    <!-- ═══════════════ CONNECT SCREEN ═══════════════ -->
+    <div class="connect-screen" id="connectScreen">
+        <div class="candy-rain" id="candyRain"></div>
+
+        <div class="connect-card">
+            <div class="mascot">
+                <div class="mascot-body">
+                    <div class="mascot-face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="mouth"></div>
+                        <div class="blush left"></div>
+                        <div class="blush right"></div>
+                    </div>
+                    <div class="mascot-wrapper"></div>
+                </div>
+                <div class="mascot-shadow"></div>
+            </div>
+
+            <h1 class="connect-title">NineEleven</h1>
+            <p class="connect-subtitle">Your cute candy companion! 🍭</p>
+
+            <div class="connect-form">
+                <div class="input-wrapper">
+                    <span class="input-icon">🔗</span>
+                    <input type="url" id="firebaseUrlInput"
+                           placeholder="Paste Firebase URL here..."
+                           autocomplete="off">
+                </div>
+                <button id="btnConnect" onclick="connectFirebase()" class="btn-connect">
+                    <span class="btn-text">Connect Machine</span>
+                    <span class="btn-sparkle">✨</span>
+                </button>
+            </div>
+
+            <div class="connect-hint">
+                <span>🍬</span> Tip: Ask your vendor for the database link!
+            </div>
+        </div>
     </div>
 
-    <!-- ── Main Content ────────────────────────────────────────── -->
-    <main class="main-content" id="mainContent" style="display:none;">
+    <!-- ═══════════════ MAIN DASHBOARD ═══════════════ -->
+    <div class="dashboard" id="dashboard" style="display:none;">
 
-        <!-- 3D Vending Machine -->
-        <div class="vending-scene" id="vendingScene"></div>
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="logo-candy">🍬</div>
+                <div>
+                    <h1 class="brand">NineEleven</h1>
+                    <p class="tagline">tap · scan · munch!</p>
+                </div>
+            </div>
+            <div class="status-chip" id="statusPill">
+                <div class="status-dot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
 
-        <!-- Candy Cards -->
-        <section class="candy-section">
-            <h2 class="candy-section-title">🍭 Pick Your Candy</h2>
-            <div id="candyList">
-                <!-- Populated by JS -->
+        <!-- Candy Shelf -->
+        <section class="candy-shelf">
+            <div class="shelf-header">
+                <h2>Pick Your Treat! <span class="wiggle">🍭</span></h2>
+                <p>Tap a candy to buy instantly</p>
+            </div>
+
+            <div class="candy-grid" id="candyList">
+                <!-- JS fills this -->
             </div>
         </section>
 
-    </main>
+        <!-- 3D Preview -->
+        <section class="machine-section">
+            <div class="machine-label">
+                <div class="live-dot"></div>
+                Live Machine View
+            </div>
+            <div class="machine-viewport" id="vendingScene"></div>
+        </section>
+    </div>
 
-    <!-- ── Payment Modal ───────────────────────────────────────── -->
-    <div class="overlay" id="payOverlay">
-        <div class="pay-modal">
-            <h2>💳 Pay for your candy</h2>
-            <p class="pay-candy-name" id="payCandyName"></p>
-            <div class="pay-amount" id="payAmount"></div>
+    <!-- ═══════════════ PAY MODAL ═══════════════ -->
+    <div class="modal-backdrop" id="payOverlay">
+        <div class="modal pay-modal">
+            <button class="modal-close" onclick="closePayModal()">✕</button>
 
-            <div class="qr-container" id="qrContainer">
-                <!-- QR rendered here -->
+            <div class="pay-header">
+                <div class="pay-candy-icon" id="payCandyIcon">🍬</div>
+                <h2>Pay for <span class="gradient-text" id="payCandyName">Candy</span></h2>
+                <div class="pay-price" id="payAmount">₹0</div>
             </div>
 
-            <div class="pay-divider">OR</div>
+            <div class="qr-wrapper">
+                <div class="qr-frame" id="qrContainer">
+                    <!-- QR here -->
+                </div>
+                <p class="qr-hint">Scan with any UPI app 📱</p>
+            </div>
 
-            <button class="btn-upi" id="btnPayUpi" onclick="showConfirmation()">
-                Pay with UPI
+            <div class="or-divider"><span>or</span></div>
+
+            <button class="btn-pay-upi" onclick="showConfirmation()">
+                <span>💸</span> Pay on this device
             </button>
 
-            <button class="btn-close-modal" onclick="closePayModal()">Cancel</button>
+            <button class="btn-cancel" onclick="closePayModal()">Nah, maybe later</button>
         </div>
     </div>
 
-    <!-- ── Payment Confirmation Modal ──────────────────────────── -->
-    <div class="overlay" id="confirmOverlay">
-        <div class="confirm-modal">
-            <div class="confirm-icon">📱</div>
-            <h2>Confirm Payment</h2>
-            <p class="confirm-details" id="confirmDetails">Pay for Candy A</p>
-            <div class="confirm-amount" id="confirmAmount">₹5</div>
-            <button class="btn-confirm-pay" id="btnConfirmPay" onclick="processPayment()">
-                ✓ Confirm & Pay
+    <!-- ═══════════════ CONFIRM MODAL ═══════════════ -->
+    <div class="modal-backdrop" id="confirmOverlay">
+        <div class="modal confirm-modal">
+            <div class="confirm-emoji wiggle">📱</div>
+            <h2>Ready to Pay?</h2>
+            <p>Buying <strong class="gradient-text" id="confirmDetails">Candy</strong> for <strong class="gradient-text" id="confirmAmount">₹0</strong></p>
+            <div class="confirm-buttons">
+                <button class="btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn-confirm" id="btnConfirmPay" onclick="processPayment()">
+                    ✓ Yes, Pay!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ SUCCESS MODAL ═══════════════ -->
+    <div class="modal-backdrop" id="successOverlay">
+        <div class="modal success-modal">
+            <div class="confetti-burst" id="confettiBurst"></div>
+            <div class="success-emoji" id="successEmoji">🎉</div>
+            <h2 class="success-title">Yay!</h2>
+            <p id="successMsg">Your candy is on its way...</p>
+            <div class="dispense-bar" id="successLoader">
+                <div class="dispense-fill"></div>
+            </div>
+            <button class="btn-confirm" id="btnSuccessDone" onclick="closeSuccessModal()" style="display:none;">
+                🍬 Awesome!
             </button>
-            <button class="btn-close-modal" onclick="closeConfirmModal()">Cancel</button>
         </div>
     </div>
 
-    <!-- ── Success Modal ───────────────────────────────────────── -->
-    <div class="overlay" id="successOverlay">
-        <div class="success-modal">
-            <div class="success-icon">🎉</div>
-            <h2>Payment Successful!</h2>
-            <p id="successMsg">Your candy is being dispensed...</p>
-            <button class="btn-close-modal" onclick="closeSuccessModal()" style="margin-top:1.5rem;">Done</button>
-        </div>
-    </div>
+    <!-- Toast -->
+    <div class="toast-tray" id="toastContainer"></div>
 
-    <!-- ── Toast ───────────────────────────────────────────────── -->
-    <div class="toast" id="toast"></div>
-
-    <footer class="footer">
-        Made with 🍬 — nineEleven powered by Firebase
-    </footer>
-
-    <!-- ── Scripts ─────────────────────────────────────────────── -->
-    <!-- Three.js -->
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- QR Code Generator -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-    <!-- Firebase SDK (compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-    <!-- App Logic -->
     <script src="app.js"></script>
-
 </body>
 </html>

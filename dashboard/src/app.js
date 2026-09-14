@@ -1,359 +1,408 @@
-/* app.js — Consumer Vending Machine Dashboard
-   Three.js 3D vending machine + Firebase realtime + UPI payment flow */
+/* app.js — NineEleven Cute Candy Vending Machine */
 
-// ── State ─────────────────────────────────────────────────────────────────
-let db = null;
-let currentCandy = null;  // candy being purchased
-let stockData = {};        // live stock from Firebase
-let orderRef = null;       // ref to current order being tracked
+// ── State ──
+var state = {
+    db: null,
+    stockData: {},
+    selectedCandy: null,
+    isOnline: false
+};
 
-const STORAGE_KEY = 'vending_firebase_url';
-const CANDY_COLORS = [0xff7eb3, 0xa78bfa, 0x6ee7b7];  // pink, purple, mint
-const CANDY_IMAGES = ['../images/candy_a.png', '../images/candy_b.png', '../images/candy_c.png'];
+var FIREBASE_URL = 'https://vending-6bced-default-rtdb.firebaseio.com';
+var EMOJIS = ['🍭', '🍫', '🍬', '🍩', '🍪', '🧁'];
+var AVATAR_COLORS = ['pink', 'purple', 'mint', 'peach', 'blue', 'coral'];
+var CANDY_COLORS_3D = [0xff6b9d, 0xc084fc, 0x34d399, 0xfbbf24, 0x60a5fa, 0xfb7185];
 
-// ── Firebase Connection ───────────────────────────────────────────────────
-
-window.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        document.getElementById('firebaseUrlInput').value = saved;
-        connectFirebase();
-    }
+// ── Boot ──
+window.addEventListener('DOMContentLoaded', function() {
+    spawnParticles();
+    spawnCandyRain();
+    document.getElementById('firebaseUrlInput').value = FIREBASE_URL;
     initThreeScene();
 });
 
-window.connectFirebase = function() {
-    const urlInput = document.getElementById('firebaseUrlInput');
-    let url = urlInput.value.trim().replace(/\/+$/, '');
-    if (!url) return;
-    if (!url.startsWith('https://')) url = 'https://' + url;
+// ── Floating Background Particles ──
+function spawnParticles() {
+    var container = document.getElementById('particles');
+    if (!container) return;
+    var candies = ['🍬', '🍭', '🍫', '🍩', '⭐', '✨', '💖'];
+    for (var i = 0; i < 15; i++) {
+        var p = document.createElement('div');
+        p.className = 'particle';
+        p.textContent = candies[Math.floor(Math.random() * candies.length)];
+        p.style.left = (Math.random() * 100) + '%';
+        p.style.animationDuration = (12 + Math.random() * 18) + 's';
+        p.style.animationDelay = (Math.random() * 15) + 's';
+        p.style.fontSize = (1 + Math.random() * 1.5) + 'rem';
+        container.appendChild(p);
+    }
+}
 
-    const match = url.match(/https:\/\/(.+?)\.firebaseio\.com/);
-    if (!match) { showToast('Invalid Firebase URL'); return; }
+// ── Candy Rain on Connect Screen ──
+function spawnCandyRain() {
+    var container = document.getElementById('candyRain');
+    if (!container) return;
+    var sweets = ['🍬', '🍭', '🍫', '🍩', '🧁', '🍪', '🍰'];
+    for (var i = 0; i < 20; i++) {
+        var drop = document.createElement('div');
+        drop.className = 'rain-drop';
+        drop.textContent = sweets[Math.floor(Math.random() * sweets.length)];
+        drop.style.left = (Math.random() * 100) + '%';
+        drop.style.animationDuration = (5 + Math.random() * 8) + 's';
+        drop.style.animationDelay = (Math.random() * 6) + 's';
+        drop.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
+        container.appendChild(drop);
+    }
+}
+
+// ── Firebase ──
+window.connectFirebase = function() {
+    var urlInput = document.getElementById('firebaseUrlInput');
+    var url = urlInput.value.trim().replace(/\/+$/, '');
+    if (!url) {
+        showToast('Enter a Firebase URL first!', 'error');
+        return;
+    }
+    if (url.indexOf('https://') !== 0) url = 'https://' + url;
 
     try {
         if (!firebase.apps.length) {
             firebase.initializeApp({ databaseURL: url });
         }
-        db = firebase.database();
-        localStorage.setItem(STORAGE_KEY, url);
+        state.db = firebase.database();
 
-        document.getElementById('configBanner').classList.add('hidden');
-        document.getElementById('mainContent').style.display = '';
+        // Transition from connect screen to dashboard
+        document.getElementById('connectScreen').style.display = 'none';
+        var dash = document.getElementById('dashboard');
+        dash.style.display = '';
 
+        seedInitialData();
         listenStock();
         listenStatus();
-        showToast('🍬 Connected!');
+
+        showToast('Connected! Let the sweetness begin! 🍬', 'success');
+        setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 150);
+
     } catch (e) {
-        showToast('Connection failed: ' + e.message);
+        showToast('Connection failed: ' + e.message, 'error');
     }
 };
 
-// ── Firebase Listeners ────────────────────────────────────────────────────
+function seedInitialData() {
+    if (!state.db) return;
+    state.db.ref('vending_machine/stock').once('value', function(snap) {
+        if (!snap.exists() || !snap.val()) {
+            var initialStock = {
+                candy_a: { name: 'Fruit Drops',   price: 10, qty: 8 },
+                candy_b: { name: 'Choco Delight', price: 20, qty: 5 },
+                candy_c: { name: 'Mint Blast',    price: 15, qty: 10 }
+            };
+            state.db.ref('vending_machine/stock').set(initialStock);
+        }
+    });
+    state.db.ref('vending_machine/status').once('value', function(snap) {
+        if (!snap.exists() || !snap.val()) {
+            state.db.ref('vending_machine/status').set({
+                online: true,
+                last_seen: Math.floor(Date.now() / 1000)
+            });
+        }
+    });
+}
 
 function listenStock() {
-    db.ref('vending_machine/stock').on('value', snap => {
-        const data = snap.val();
+    state.db.ref('vending_machine/stock').on('value', function(snap) {
+        var data = snap.val();
         if (!data) return;
-        stockData = data;
+        state.stockData = data;
         renderCandyCards(data);
-        updateVendingMachine(data);
+        updateThreeSceneStock(data);
     });
 }
 
 function listenStatus() {
-    db.ref('vending_machine/status').on('value', snap => {
-        const data = snap.val();
+    state.db.ref('vending_machine/status').on('value', function(snap) {
+        var data = snap.val();
         if (!data) return;
-        const pill = document.getElementById('statusPill');
-        const text = document.getElementById('statusText');
-        const now = Date.now() / 1000;
-        const isOnline = data.online && (now - (data.last_seen || 0) < 120);
-
-        if (isOnline) {
-            pill.classList.remove('offline');
+        var pill = document.getElementById('statusPill');
+        var text = document.getElementById('statusText');
+        var now = Date.now() / 1000;
+        state.isOnline = data.online && (now - (data.last_seen || 0) < 120);
+        if (state.isOnline) {
+            pill.className = 'status-chip';
             text.textContent = 'Machine Online';
         } else {
-            pill.classList.add('offline');
+            pill.className = 'status-chip offline';
             text.textContent = 'Machine Offline';
         }
     });
 }
 
-// ── Candy Cards Rendering ─────────────────────────────────────────────────
-
+// ── Candy Cards ──
 function renderCandyCards(data) {
-    const container = document.getElementById('candyList');
+    var container = document.getElementById('candyList');
     container.innerHTML = '';
 
-    const entries = Object.entries(data);
-    entries.forEach(([key, item], i) => {
-        const qty = item.qty || 0;
-        const soldOut = qty <= 0;
-        let level = 'high';
-        if (qty <= 2) level = 'low';
-        else if (qty <= 5) level = 'mid';
+    var entries = Object.entries(data);
+    entries.forEach(function(entry, i) {
+        var key = entry[0];
+        var item = entry[1];
+        var qty = item.qty || 0;
+        var soldOut = qty <= 0;
+        var emoji = EMOJIS[i % EMOJIS.length];
+        var colorClass = AVATAR_COLORS[i % AVATAR_COLORS.length];
 
-        const card = document.createElement('div');
-        card.className = `candy-card ${soldOut ? 'sold-out' : ''}`;
-        card.innerHTML = `
-            <img class="candy-img" src="${CANDY_IMAGES[i] || CANDY_IMAGES[0]}"
-                 alt="${item.name || key}">
-            <div class="candy-info">
-                <div class="candy-name">${item.name || key}</div>
-                <div class="candy-price">₹${item.price || 0}</div>
-                <span class="candy-stock ${level}">
-                    ${soldOut ? '❌ Sold out' : `✓ ${qty} left`}
-                </span>
-            </div>
-            <div class="candy-actions">
-                <button class="btn-buy" onclick="openPayModal('${key}', ${i})"
-                        ${soldOut ? 'disabled' : ''}>
-                    Buy Now
-                </button>
-                <div class="sold-out-badge">Sold Out</div>
-            </div>
-        `;
+        var stockLevel = 'high';
+        if (qty <= 2) stockLevel = 'low';
+        else if (qty <= 5) stockLevel = 'mid';
+
+        var card = document.createElement('div');
+        card.className = 'candy-card' + (soldOut ? ' sold-out' : '');
+
+        if (!soldOut) {
+            (function(k, idx) {
+                card.onclick = function() { openPayModal(k, idx); };
+            })(key, i);
+        }
+
+        var stockText = soldOut ? '❌ Sold out' : '✓ ' + qty + ' left';
+        var arrowText = soldOut ? '—' : '→';
+
+        card.innerHTML = '<div class="candy-avatar ' + colorClass + '">' + emoji + '</div>' +
+            '<div class="candy-details">' +
+                '<div class="name">' + (item.name || key) + '</div>' +
+                '<div class="price">₹' + (item.price || 0) + '</div>' +
+                '<div class="stock-pill ' + stockLevel + '">' + stockText + '</div>' +
+            '</div>' +
+            '<div class="card-arrow">' + arrowText + '</div>';
+
         container.appendChild(card);
     });
 }
 
-// ── Three.js Vending Machine ──────────────────────────────────────────────
-
-let scene, camera, renderer, vendingGroup;
-let candyMeshes = [];
+// ── Three.js 3D Machine ──
+var scene, camera, renderer, machineGroup;
+var candyMeshes = [];
 
 function initThreeScene() {
-    const container = document.getElementById('vendingScene');
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    var container = document.getElementById('vendingScene');
+    if (!container) return;
 
-    // Scene
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0e6ff);
-
-    // Camera
-    camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-    camera.position.set(0, 0.5, 5);
-
-    // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
-    // Lights
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambient);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(3, 5, 4);
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xfce7f3);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(3, 6, 5);
     dirLight.castShadow = true;
     scene.add(dirLight);
-    const pointLight = new THREE.PointLight(0xff7eb3, 0.4, 10);
-    pointLight.position.set(-2, 2, 3);
-    scene.add(pointLight);
 
-    // Vending machine group
-    vendingGroup = new THREE.Group();
-    scene.add(vendingGroup);
+    var pinkLight = new THREE.PointLight(0xff6b9d, 0.6, 10);
+    pinkLight.position.set(-3, 2, 3);
+    scene.add(pinkLight);
 
-    buildVendingMachine();
-    animate();
+    camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+    camera.position.set(0, 0.5, 6);
 
-    // Resize handler
-    window.addEventListener('resize', () => {
-        const w2 = container.clientWidth;
-        const h2 = container.clientHeight;
-        camera.aspect = w2 / h2;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w2, h2);
-    });
-}
+    machineGroup = new THREE.Group();
+    scene.add(machineGroup);
 
-function buildVendingMachine() {
-    // ── Main body (rounded box effect) ───────────────────────────────
-    const bodyGeo = new THREE.BoxGeometry(2.2, 3, 1.2);
-    const bodyMat = new THREE.MeshPhongMaterial({
-        color: 0xffffff,
-        specular: 0x444444,
-        shininess: 60,
-    });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0;
-    body.castShadow = true;
-    body.receiveShadow = true;
-    vendingGroup.add(body);
+    buildCuteMachine();
 
-    // ── Glass front ──────────────────────────────────────────────────
-    const glassGeo = new THREE.PlaneGeometry(1.8, 2.4);
-    const glassMat = new THREE.MeshPhongMaterial({
-        color: 0xe0f2fe,
-        transparent: true,
-        opacity: 0.25,
-        specular: 0xffffff,
-        shininess: 100,
-        side: THREE.DoubleSide,
-    });
-    const glass = new THREE.Mesh(glassGeo, glassMat);
-    glass.position.set(0, 0.1, 0.61);
-    vendingGroup.add(glass);
-
-    // ── Glass border/frame ───────────────────────────────────────────
-    const frameMat = new THREE.MeshPhongMaterial({ color: 0xff7eb3 });
-
-    // Top frame
-    const topFrame = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.1), frameMat);
-    topFrame.position.set(0, 1.34, 0.61);
-    vendingGroup.add(topFrame);
-
-    // Bottom frame
-    const bottomFrame = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.1), frameMat);
-    bottomFrame.position.set(0, -1.06, 0.61);
-    vendingGroup.add(bottomFrame);
-
-    // Left frame
-    const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.48, 0.1), frameMat);
-    leftFrame.position.set(-0.96, 0.14, 0.61);
-    vendingGroup.add(leftFrame);
-
-    // Right frame
-    const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.48, 0.1), frameMat);
-    rightFrame.position.set(0.96, 0.14, 0.61);
-    vendingGroup.add(rightFrame);
-
-    // ── Shelves ──────────────────────────────────────────────────────
-    const shelfMat = new THREE.MeshPhongMaterial({ color: 0xfce4ec });
-
-    for (let i = 0; i < 3; i++) {
-        const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.05, 0.8), shelfMat);
-        shelf.position.set(0, 0.9 - i * 0.8, 0.15);
-        shelf.receiveShadow = true;
-        vendingGroup.add(shelf);
-    }
-
-    // ── Candy items on shelves (colored spheres) ─────────────────────
-    const loader = new THREE.TextureLoader();
-    candyMeshes = [];
-
-    for (let i = 0; i < 3; i++) {
-        const candyGeo = new THREE.SphereGeometry(0.22, 32, 32);
-        const candyMat = new THREE.MeshPhongMaterial({
-            color: CANDY_COLORS[i],
-            specular: 0xffffff,
-            shininess: 80,
-        });
-        const candy = new THREE.Mesh(candyGeo, candyMat);
-        candy.position.set(0, 1.15 - i * 0.8, 0.15);
-        candy.castShadow = true;
-        vendingGroup.add(candy);
-        candyMeshes.push(candy);
-
-        // Wrapper detail — a torus ring around each
-        const wrapperGeo = new THREE.TorusGeometry(0.22, 0.03, 8, 24);
-        const wrapperMat = new THREE.MeshPhongMaterial({
-            color: CANDY_COLORS[(i + 1) % 3],
-            specular: 0xffffff,
-            shininess: 60,
-        });
-        const wrapper = new THREE.Mesh(wrapperGeo, wrapperMat);
-        wrapper.position.copy(candy.position);
-        wrapper.rotation.x = Math.PI / 2;
-        vendingGroup.add(wrapper);
-    }
-
-    // ── Dispense slot at bottom ──────────────────────────────────────
-    const slotGeo = new THREE.BoxGeometry(1.4, 0.35, 0.15);
-    const slotMat = new THREE.MeshPhongMaterial({ color: 0x1f1f1f });
-    const slot = new THREE.Mesh(slotGeo, slotMat);
-    slot.position.set(0, -1.25, 0.55);
-    vendingGroup.add(slot);
-
-    // ── Title on top ─────────────────────────────────────────────────
-    const topGeo = new THREE.BoxGeometry(2.2, 0.3, 1.2);
-    const topMat = new THREE.MeshPhongMaterial({
-        color: 0xff7eb3,
-        specular: 0xffffff,
-        shininess: 40,
-    });
-    const top = new THREE.Mesh(topGeo, topMat);
-    top.position.y = 1.65;
-    vendingGroup.add(top);
-
-    vendingGroup.position.y = -0.3;
-}
-
-function updateVendingMachine(data) {
-    // Update candy mesh visibility based on stock
-    const entries = Object.values(data);
-    for (let i = 0; i < Math.min(entries.length, candyMeshes.length); i++) {
-        const qty = entries[i].qty || 0;
-        candyMeshes[i].visible = qty > 0;
-    }
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    const t = Date.now() * 0.001;
-
-    // Gentle sway
-    if (vendingGroup) {
-        vendingGroup.rotation.y = Math.sin(t * 0.5) * 0.08;
-    }
-
-    // Candy float
-    candyMeshes.forEach((mesh, i) => {
-        if (mesh.visible) {
-            mesh.position.y = (1.15 - i * 0.8) + Math.sin(t * 1.5 + i * 1.2) * 0.03;
-            mesh.rotation.y = t * 0.8 + i;
+    var resizeObserver = new ResizeObserver(function(entries) {
+        for (var j = 0; j < entries.length; j++) {
+            var rect = entries[j].contentRect;
+            if (rect.width > 0 && rect.height > 0) {
+                renderer.setSize(rect.width, rect.height);
+                camera.aspect = rect.width / rect.height;
+                camera.updateProjectionMatrix();
+            }
         }
     });
+    resizeObserver.observe(container);
 
-    renderer.render(scene, camera);
+    var clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+        var t = clock.getElapsedTime();
+
+        if (machineGroup) {
+            machineGroup.rotation.y = Math.sin(t * 0.4) * 0.12;
+        }
+
+        for (var i = 0; i < candyMeshes.length; i++) {
+            var cm = candyMeshes[i];
+            if (cm.mesh.visible) {
+                cm.mesh.position.y = cm.baseY + Math.sin(t * 2.5 + i * 1.3) * 0.04;
+                cm.mesh.rotation.y += 0.025;
+                cm.mesh.rotation.z = Math.sin(t + i) * 0.1;
+            }
+        }
+
+        renderer.render(scene, camera);
+    }
+    animate();
 }
 
-// ── Payment Flow ──────────────────────────────────────────────────────────
+function buildCuteMachine() {
+    // Cute rounded-look body (white/pink)
+    var bodyGeo = new THREE.BoxGeometry(2.2, 3.2, 1.2);
+    var bodyMat = new THREE.MeshPhongMaterial({
+        color: 0xfff0f5,
+        specular: 0xffffff,
+        shininess: 40
+    });
+    var body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    machineGroup.add(body);
 
+    // Pink header
+    var headerGeo = new THREE.BoxGeometry(2.2, 0.35, 1.2);
+    var headerMat = new THREE.MeshPhongMaterial({ color: 0xff6b9d, specular: 0xffffff, shininess: 50 });
+    var header = new THREE.Mesh(headerGeo, headerMat);
+    header.position.y = 1.75;
+    machineGroup.add(header);
+
+    // Glass panel
+    var glassGeo = new THREE.PlaneGeometry(1.8, 2.4);
+    var glassMat = new THREE.MeshPhongMaterial({
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.2,
+        specular: 0xffffff,
+        shininess: 100,
+        side: THREE.DoubleSide
+    });
+    var glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.set(0, 0.1, 0.61);
+    machineGroup.add(glass);
+
+    // Pink frame edges
+    var frameMat = new THREE.MeshPhongMaterial({ color: 0xff6b9d });
+    var tf = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.08), frameMat);
+    tf.position.set(0, 1.34, 0.61); machineGroup.add(tf);
+    var bf = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.08), frameMat);
+    bf.position.set(0, -1.10, 0.61); machineGroup.add(bf);
+    var lf = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.50, 0.08), frameMat);
+    lf.position.set(-0.97, 0.12, 0.61); machineGroup.add(lf);
+    var rf = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.50, 0.08), frameMat);
+    rf.position.set(0.97, 0.12, 0.61); machineGroup.add(rf);
+
+    // Shelves
+    var shelfMat = new THREE.MeshPhongMaterial({ color: 0xfce7f3 });
+    candyMeshes = [];
+
+    for (var row = 0; row < 3; row++) {
+        var shelf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.04, 0.8), shelfMat);
+        var sy = 1.0 - row * 0.7;
+        shelf.position.set(0, sy, 0.2);
+        shelf.receiveShadow = true;
+        machineGroup.add(shelf);
+
+        // Candy on each shelf
+        var candyGeo = new THREE.SphereGeometry(0.18, 24, 24);
+        var color = CANDY_COLORS_3D[row % CANDY_COLORS_3D.length];
+        var candyMat = new THREE.MeshPhongMaterial({
+            color: color,
+            specular: 0xffffff,
+            shininess: 80
+        });
+        var candy = new THREE.Mesh(candyGeo, candyMat);
+        var baseY = sy + 0.22;
+        candy.position.set(0, baseY, 0.2);
+        candy.castShadow = true;
+        machineGroup.add(candy);
+
+        // Wrapper ring
+        var wrapGeo = new THREE.TorusGeometry(0.18, 0.03, 8, 24);
+        var wrapColor = CANDY_COLORS_3D[(row + 1) % CANDY_COLORS_3D.length];
+        var wrapMat = new THREE.MeshPhongMaterial({ color: wrapColor, specular: 0xffffff, shininess: 60 });
+        var wrap = new THREE.Mesh(wrapGeo, wrapMat);
+        wrap.position.copy(candy.position);
+        wrap.rotation.x = Math.PI / 2;
+        machineGroup.add(wrap);
+
+        candyMeshes.push({ mesh: candy, baseY: baseY });
+    }
+
+    // Dispense slot
+    var slotGeo = new THREE.BoxGeometry(1.2, 0.3, 0.12);
+    var slotMat = new THREE.MeshPhongMaterial({ color: 0x2d1b33 });
+    var slot = new THREE.Mesh(slotGeo, slotMat);
+    slot.position.set(0, -1.3, 0.58);
+    machineGroup.add(slot);
+
+    machineGroup.position.y = -0.2;
+}
+
+function updateThreeSceneStock(data) {
+    var entries = Object.values(data);
+    for (var i = 0; i < candyMeshes.length; i++) {
+        if (i < entries.length) {
+            candyMeshes[i].mesh.visible = (entries[i].qty || 0) > 0;
+        } else {
+            candyMeshes[i].mesh.visible = false;
+        }
+    }
+}
+
+// ── Payment Flow (new QR every time) ──
 window.openPayModal = function(key, index) {
-    const item = stockData[key];
+    if (!state.isOnline) {
+        showToast('Machine is offline right now 😢', 'error');
+        return;
+    }
+    var item = state.stockData[key];
     if (!item || item.qty <= 0) return;
 
-    currentCandy = { key, index, name: item.name, price: item.price };
+    state.selectedCandy = { key: key, index: index, name: item.name, price: item.price };
 
+    document.getElementById('payCandyIcon').textContent = EMOJIS[index % EMOJIS.length];
     document.getElementById('payCandyName').textContent = item.name;
     document.getElementById('payAmount').textContent = '₹' + item.price;
 
-    // Generate QR code
-    const qrContainer = document.getElementById('qrContainer');
+    // Generate a UNIQUE QR code each time with a timestamp nonce
+    var nonce = Date.now();
+    var upiString = 'upi://pay?pa=vendor@upi&pn=NineEleven&am=' + item.price +
+                    '&cu=INR&tn=' + encodeURIComponent(item.name) +
+                    '&tr=NE' + nonce;
+
+    var qrContainer = document.getElementById('qrContainer');
     qrContainer.innerHTML = '';
-    const upiString = `upi://pay?pa=vendor@upi&pn=nineEleven&am=${item.price}&cu=INR&tn=${item.name}`;
-    const qr = qrcode(0, 'M');
-    qr.addData(upiString);
-    qr.make();
-    const qrImg = document.createElement('img');
-    qrImg.src = qr.createDataURL(6, 0);
-    qrImg.style.borderRadius = '8px';
-    qrImg.style.cursor = 'pointer';
-    qrImg.onclick = () => showConfirmation();
-    qrContainer.appendChild(qrImg);
+    try {
+        var qr = qrcode(0, 'M');
+        qr.addData(upiString);
+        qr.make();
+        var img = document.createElement('img');
+        img.src = qr.createDataURL(6, 0);
+        qrContainer.appendChild(img);
+    } catch(e) {
+        console.error('QR Error', e);
+    }
 
     document.getElementById('payOverlay').classList.add('active');
 };
 
 window.closePayModal = function() {
     document.getElementById('payOverlay').classList.remove('active');
-    currentCandy = null;
+    state.selectedCandy = null;
 };
 
 window.showConfirmation = function() {
-    if (!currentCandy) return;
+    if (!state.selectedCandy) return;
     document.getElementById('payOverlay').classList.remove('active');
-
-    document.getElementById('confirmDetails').textContent = 'Pay for ' + currentCandy.name;
-    document.getElementById('confirmAmount').textContent = '₹' + currentCandy.price;
-    document.getElementById('btnConfirmPay').disabled = false;
-    document.getElementById('btnConfirmPay').textContent = '✓ Confirm & Pay';
-
+    document.getElementById('confirmDetails').textContent = state.selectedCandy.name;
+    document.getElementById('confirmAmount').textContent = '₹' + state.selectedCandy.price;
+    var btn = document.getElementById('btnConfirmPay');
+    btn.disabled = false;
+    btn.textContent = '✓ Yes, Pay!';
     document.getElementById('confirmOverlay').classList.add('active');
 };
 
@@ -362,64 +411,105 @@ window.closeConfirmModal = function() {
 };
 
 window.processPayment = function() {
-    if (!currentCandy || !db) return;
-
-    const btn = document.getElementById('btnConfirmPay');
+    if (!state.selectedCandy || !state.db) return;
+    var btn = document.getElementById('btnConfirmPay');
     btn.disabled = true;
     btn.textContent = 'Processing...';
 
-    // Write pending order to Firebase
-    const orderData = {
-        candy_index: currentCandy.index,
-        candy_name: currentCandy.name,
-        price: currentCandy.price,
+    var orderData = {
+        candy_index: state.selectedCandy.index,
+        candy_name: state.selectedCandy.name,
+        price: state.selectedCandy.price,
         status: 'pending',
-        timestamp: Date.now() / 1000,
+        timestamp: Math.floor(Date.now() / 1000)
     };
 
-    const newOrderRef = db.ref('vending_machine/orders').push();
-    const orderId = newOrderRef.key;
+    var newOrderRef = state.db.ref('vending_machine/orders').push();
+    var orderId = newOrderRef.key;
 
-    newOrderRef.set(orderData).then(() => {
-        // Close confirm modal
+    newOrderRef.set(orderData).then(function() {
         document.getElementById('confirmOverlay').classList.remove('active');
 
-        // Show success
-        document.getElementById('successMsg').textContent =
-            `${currentCandy.name} is being dispensed from the machine! 🍬`;
+        document.getElementById('successEmoji').textContent = '🎉';
+        document.getElementById('successMsg').textContent = 'Dispensing your ' + state.selectedCandy.name + '...';
+        document.getElementById('successLoader').style.display = 'block';
+        document.getElementById('btnSuccessDone').style.display = 'none';
         document.getElementById('successOverlay').classList.add('active');
 
-        // Listen for order completion
-        db.ref(`vending_machine/orders/${orderId}/status`).on('value', snap => {
-            const status = snap.val();
-            if (status === 'completed') {
-                document.getElementById('successMsg').textContent =
-                    '✅ Your candy has been dispensed! Enjoy!';
-                db.ref(`vending_machine/orders/${orderId}/status`).off();
-            } else if (status === 'failed') {
-                document.getElementById('successMsg').textContent =
-                    '❌ Sorry, this candy is out of stock.';
-                db.ref(`vending_machine/orders/${orderId}/status`).off();
+        // Fire confetti
+        spawnConfetti();
+
+        var orderStatusRef = state.db.ref('vending_machine/orders/' + orderId + '/status');
+        orderStatusRef.on('value', function(snap) {
+            var s = snap.val();
+            if (s === 'completed') {
+                document.getElementById('successEmoji').textContent = '🍬';
+                document.getElementById('successMsg').textContent = 'Enjoy your treat! 🎉';
+                document.getElementById('successLoader').style.display = 'none';
+                document.getElementById('btnSuccessDone').style.display = 'inline-block';
+                orderStatusRef.off();
+            } else if (s === 'failed') {
+                document.getElementById('successEmoji').textContent = '😢';
+                document.getElementById('successMsg').textContent = 'Oops! Something went wrong.';
+                document.getElementById('successLoader').style.display = 'none';
+                document.getElementById('btnSuccessDone').style.display = 'inline-block';
+                orderStatusRef.off();
             }
         });
 
-        currentCandy = null;
-    }).catch(err => {
+        state.selectedCandy = null;
+    }).catch(function(err) {
         btn.disabled = false;
-        btn.textContent = '✓ Confirm & Pay';
-        showToast('Payment failed: ' + err.message);
+        btn.textContent = '✓ Yes, Pay!';
+        showToast('Payment failed: ' + err.message, 'error');
     });
 };
 
 window.closeSuccessModal = function() {
     document.getElementById('successOverlay').classList.remove('active');
+    // Clear confetti
+    var burst = document.getElementById('confettiBurst');
+    if (burst) burst.innerHTML = '';
 };
 
-// ── Toast ─────────────────────────────────────────────────────────────────
+// ── Confetti Burst ──
+function spawnConfetti() {
+    var container = document.getElementById('confettiBurst');
+    if (!container) return;
+    container.innerHTML = '';
+    var colors = ['#ff6b9d', '#c084fc', '#34d399', '#fbbf24', '#60a5fa', '#fb7185'];
+    for (var i = 0; i < 40; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        var angle = (Math.random() * 360) * (Math.PI / 180);
+        var dist = 80 + Math.random() * 160;
+        piece.style.setProperty('--x', (Math.cos(angle) * dist) + 'px');
+        piece.style.setProperty('--y', (Math.sin(angle) * dist) + 'px');
+        piece.style.animationDelay = (Math.random() * 0.3) + 's';
+        piece.style.width = (6 + Math.random() * 6) + 'px';
+        piece.style.height = (6 + Math.random() * 6) + 'px';
+        container.appendChild(piece);
+    }
+}
 
-function showToast(msg) {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 2500);
+// ── Toast ──
+function showToast(msg, type) {
+    type = type || 'info';
+    var container = document.getElementById('toastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+
+    var icon = '🍬';
+    if (type === 'error') icon = '😢';
+    if (type === 'success') icon = '✨';
+
+    toast.innerHTML = '<span>' + icon + '</span> <span>' + msg + '</span>';
+    container.appendChild(toast);
+
+    setTimeout(function() { toast.classList.add('show'); }, 10);
+    setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 400);
+    }, 3500);
 }
