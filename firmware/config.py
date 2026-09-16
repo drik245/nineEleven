@@ -25,6 +25,9 @@ SERVO_FREQ        = 50        # Hz
 # How long the servo holds at dispense angle before returning
 DISPENSE_HOLD_MS  = 600
 
+# ── Vibration Motor ───────────────────────────────────────────────────────
+VIBE_MOTOR_PIN    = 11  # ESP_IO11
+
 # ── IR Coin Sensor ────────────────────────────────────────────────────────
 # D0 goes LOW when a coin breaks the beam (most common active-LOW modules)
 IR_PIN         = 2    # ESP_IO2

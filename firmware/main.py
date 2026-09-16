@@ -48,6 +48,8 @@ oled = ssd1306.SSD1306_SPI(
 
 servos = make_servos()
 coins = CoinCounter()
+vibe_motor = Pin(config.VIBE_MOTOR_PIN, Pin.OUT)
+vibe_motor.value(0)
 
 # Button indices
 BTN_UP     = 0
@@ -152,7 +154,9 @@ def dispense_candy(candy_index):
     candy = config.CANDIES[candy_index]
 
     oled_ui.show_dispensing(oled, candy)
+    vibe_motor.value(1)  # Turn on vibration motor
     servos[candy["slot"]].dispense()
+    vibe_motor.value(0)  # Turn off vibration motor
 
     stock[candy_index] = max(0, stock[candy_index] - 1)
     total_revenue += candy["price"]

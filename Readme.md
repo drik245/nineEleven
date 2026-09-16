@@ -41,6 +41,7 @@ Vending/
 | **Coin Sensor**    | IR module, D0 digital (active LOW)         |
 | **Servos**         | 3× standard hobby servo (50 Hz PWM)       |
 | **Buttons**        | 5-way nav pad (UP/DOWN/LEFT/RIGHT/SELECT)  |
+| **Vibration Motor**| Standard 3V/5V vibration motor module      |
 
 ---
 
@@ -63,6 +64,9 @@ Vending/
 │  5-Way Nav Buttons (pulled-up, press = LOW):                    │
 │    UP → IO14    DOWN → IO15    LEFT → IO16                      │
 │    RIGHT → IO17 (reserved)     SELECT → IO18                    │
+│                                                                 │
+│  Vibration Motor:                                               │
+│    Control Pin → IO11                                           │
 │                                                                 │
 │  Power:                                                         │
 │    Servo VCC → 5V     OLED VCC → 3.3V     All GNDs → GND       │
