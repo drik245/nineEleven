@@ -16,9 +16,27 @@ var CANDY_COLORS_3D = [0xff6b9d, 0xc084fc, 0x34d399, 0xfbbf24, 0x60a5fa, 0xfb718
 // ── Boot ──
 window.addEventListener('DOMContentLoaded', function() {
     spawnParticles();
-    spawnCandyRain();
-    document.getElementById('firebaseUrlInput').value = FIREBASE_URL;
     initThreeScene();
+
+    // Auto-connect to Firebase
+    try {
+        firebase.initializeApp({ databaseURL: FIREBASE_URL });
+        state.db = firebase.database();
+
+        // Hide connect screen, show dashboard
+        var cs = document.getElementById('connectScreen');
+        if (cs) cs.style.display = 'none';
+        var dash = document.getElementById('dashboard');
+        if (dash) dash.style.display = '';
+
+        seedInitialData();
+        listenStock();
+        listenStatus();
+
+        setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 150);
+    } catch (e) {
+        console.error('Firebase init failed:', e);
+    }
 });
 
 // ── Floating Background Particles ──
@@ -37,56 +55,6 @@ function spawnParticles() {
         container.appendChild(p);
     }
 }
-
-// ── Candy Rain on Connect Screen ──
-function spawnCandyRain() {
-    var container = document.getElementById('candyRain');
-    if (!container) return;
-    var sweets = ['🍬', '🍭', '🍫', '🍩', '🧁', '🍪', '🍰'];
-    for (var i = 0; i < 20; i++) {
-        var drop = document.createElement('div');
-        drop.className = 'rain-drop';
-        drop.textContent = sweets[Math.floor(Math.random() * sweets.length)];
-        drop.style.left = (Math.random() * 100) + '%';
-        drop.style.animationDuration = (5 + Math.random() * 8) + 's';
-        drop.style.animationDelay = (Math.random() * 6) + 's';
-        drop.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
-        container.appendChild(drop);
-    }
-}
-
-// ── Firebase ──
-window.connectFirebase = function() {
-    var urlInput = document.getElementById('firebaseUrlInput');
-    var url = urlInput.value.trim().replace(/\/+$/, '');
-    if (!url) {
-        showToast('Enter a Firebase URL first!', 'error');
-        return;
-    }
-    if (url.indexOf('https://') !== 0) url = 'https://' + url;
-
-    try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp({ databaseURL: url });
-        }
-        state.db = firebase.database();
-
-        // Transition from connect screen to dashboard
-        document.getElementById('connectScreen').style.display = 'none';
-        var dash = document.getElementById('dashboard');
-        dash.style.display = '';
-
-        seedInitialData();
-        listenStock();
-        listenStatus();
-
-        showToast('Connected! Let the sweetness begin! 🍬', 'success');
-        setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 150);
-
-    } catch (e) {
-        showToast('Connection failed: ' + e.message, 'error');
-    }
-};
 
 function seedInitialData() {
     if (!state.db) return;
