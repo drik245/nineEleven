@@ -1,4 +1,4 @@
-/* app.js — NineEleven Cute Candy Vending Machine */
+/* app.js - NineEleven Cute Candy Vending Machine */
 
 // ── State ──
 var state = {
@@ -93,9 +93,9 @@ function seedInitialData() {
     state.db.ref('vending_machine/stock').once('value', function(snap) {
         if (!snap.exists() || !snap.val()) {
             var initialStock = {
-                candy_a: { name: 'Fruit Drops',   price: 10, qty: 8 },
-                candy_b: { name: 'Choco Delight', price: 20, qty: 5 },
-                candy_c: { name: 'Mint Blast',    price: 15, qty: 10 }
+                candy_a: { name: 'Kaccha Mango',  price: 5,  qty: 10 },
+                candy_b: { name: 'Melody',        price: 10, qty: 10 },
+                candy_c: { name: 'Center Fresh',  price: 15, qty: 10 }
             };
             state.db.ref('vending_machine/stock').set(initialStock);
         }
@@ -166,7 +166,7 @@ function renderCandyCards(data) {
         }
 
         var stockText = soldOut ? '❌ Sold out' : '✓ ' + qty + ' left';
-        var arrowText = soldOut ? '—' : '→';
+        var arrowText = soldOut ? '-' : '→';
 
         card.innerHTML = '<div class="candy-avatar ' + colorClass + '">' + emoji + '</div>' +
             '<div class="candy-details">' +
@@ -194,7 +194,7 @@ function initThreeScene() {
     container.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xfce7f3);
+    scene.background = new THREE.Color(0xfff5fa);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
@@ -207,8 +207,8 @@ function initThreeScene() {
     pinkLight.position.set(-3, 2, 3);
     scene.add(pinkLight);
 
-    camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-    camera.position.set(0, 0.5, 6);
+    camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 0.3, 5.5);
 
     machineGroup = new THREE.Group();
     scene.add(machineGroup);
@@ -251,17 +251,41 @@ function initThreeScene() {
 }
 
 function buildCuteMachine() {
-    // Cute rounded-look body (white/pink)
-    var bodyGeo = new THREE.BoxGeometry(2.2, 3.2, 1.2);
-    var bodyMat = new THREE.MeshPhongMaterial({
-        color: 0xfff0f5,
-        specular: 0xffffff,
-        shininess: 40
+    // ── Open-front body: back + sides + top/bottom (NO front face) ──
+    var wallMat = new THREE.MeshPhongMaterial({
+        color: 0xfff0f5, specular: 0xffffff, shininess: 40,
+        side: THREE.DoubleSide
     });
-    var body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    machineGroup.add(body);
+
+    // Back wall
+    var back = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 3.2), wallMat);
+    back.position.set(0, 0, -0.6);
+    back.receiveShadow = true;
+    machineGroup.add(back);
+
+    // Left wall
+    var leftW = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 3.2), wallMat);
+    leftW.position.set(-1.1, 0, 0);
+    leftW.rotation.y = Math.PI / 2;
+    machineGroup.add(leftW);
+
+    // Right wall
+    var rightW = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 3.2), wallMat);
+    rightW.position.set(1.1, 0, 0);
+    rightW.rotation.y = -Math.PI / 2;
+    machineGroup.add(rightW);
+
+    // Top cap
+    var topW = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.2), wallMat);
+    topW.position.set(0, 1.6, 0);
+    topW.rotation.x = Math.PI / 2;
+    machineGroup.add(topW);
+
+    // Bottom cap
+    var bottomW = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.2), wallMat);
+    bottomW.position.set(0, -1.6, 0);
+    bottomW.rotation.x = -Math.PI / 2;
+    machineGroup.add(bottomW);
 
     // Pink header
     var headerGeo = new THREE.BoxGeometry(2.2, 0.35, 1.2);
@@ -300,34 +324,54 @@ function buildCuteMachine() {
     candyMeshes = [];
 
     for (var row = 0; row < 3; row++) {
-        var shelf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.04, 0.8), shelfMat);
-        var sy = 1.0 - row * 0.7;
+        var shelf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.05, 0.8), shelfMat);
+        var sy = 1.0 - row * 0.75;
         shelf.position.set(0, sy, 0.2);
         shelf.receiveShadow = true;
         machineGroup.add(shelf);
 
-        // Candy on each shelf
-        var candyGeo = new THREE.SphereGeometry(0.18, 24, 24);
+        // Main candy sphere (bigger, brighter)
         var color = CANDY_COLORS_3D[row % CANDY_COLORS_3D.length];
+        var candyGeo = new THREE.SphereGeometry(0.24, 32, 32);
         var candyMat = new THREE.MeshPhongMaterial({
             color: color,
             specular: 0xffffff,
-            shininess: 80
+            shininess: 100,
+            emissive: color,
+            emissiveIntensity: 0.15
         });
         var candy = new THREE.Mesh(candyGeo, candyMat);
-        var baseY = sy + 0.22;
-        candy.position.set(0, baseY, 0.2);
+        var baseY = sy + 0.28;
+        candy.position.set(0, baseY, 0.25);
         candy.castShadow = true;
         machineGroup.add(candy);
 
         // Wrapper ring
-        var wrapGeo = new THREE.TorusGeometry(0.18, 0.03, 8, 24);
+        var wrapGeo = new THREE.TorusGeometry(0.24, 0.04, 12, 32);
         var wrapColor = CANDY_COLORS_3D[(row + 1) % CANDY_COLORS_3D.length];
-        var wrapMat = new THREE.MeshPhongMaterial({ color: wrapColor, specular: 0xffffff, shininess: 60 });
+        var wrapMat = new THREE.MeshPhongMaterial({ color: wrapColor, specular: 0xffffff, shininess: 80 });
         var wrap = new THREE.Mesh(wrapGeo, wrapMat);
         wrap.position.copy(candy.position);
         wrap.rotation.x = Math.PI / 2;
         machineGroup.add(wrap);
+
+        // Two smaller companion candies on each side
+        var sideColors = [CANDY_COLORS_3D[(row + 2) % CANDY_COLORS_3D.length], CANDY_COLORS_3D[(row + 3) % CANDY_COLORS_3D.length]];
+        var sideOffsets = [-0.45, 0.45];
+        for (var s = 0; s < 2; s++) {
+            var sGeo = new THREE.SphereGeometry(0.15, 24, 24);
+            var sMat = new THREE.MeshPhongMaterial({
+                color: sideColors[s],
+                specular: 0xffffff,
+                shininess: 80,
+                emissive: sideColors[s],
+                emissiveIntensity: 0.1
+            });
+            var sMesh = new THREE.Mesh(sGeo, sMat);
+            sMesh.position.set(sideOffsets[s], sy + 0.19, 0.25);
+            sMesh.castShadow = true;
+            machineGroup.add(sMesh);
+        }
 
         candyMeshes.push({ mesh: candy, baseY: baseY });
     }
@@ -356,8 +400,7 @@ function updateThreeSceneStock(data) {
 // ── Payment Flow (new QR every time) ──
 window.openPayModal = function(key, index) {
     if (!state.isOnline) {
-        showToast('Machine is offline right now 😢', 'error');
-        return;
+        showToast('Machine is offline - order will be queued!', 'info');
     }
     var item = state.stockData[key];
     if (!item || item.qty <= 0) return;
@@ -440,15 +483,19 @@ window.processPayment = function() {
         spawnConfetti();
 
         var orderStatusRef = state.db.ref('vending_machine/orders/' + orderId + '/status');
+        var orderResolved = false;
+
         orderStatusRef.on('value', function(snap) {
             var s = snap.val();
             if (s === 'completed') {
+                orderResolved = true;
                 document.getElementById('successEmoji').textContent = '🍬';
                 document.getElementById('successMsg').textContent = 'Enjoy your treat! 🎉';
                 document.getElementById('successLoader').style.display = 'none';
                 document.getElementById('btnSuccessDone').style.display = 'inline-block';
                 orderStatusRef.off();
             } else if (s === 'failed') {
+                orderResolved = true;
                 document.getElementById('successEmoji').textContent = '😢';
                 document.getElementById('successMsg').textContent = 'Oops! Something went wrong.';
                 document.getElementById('successLoader').style.display = 'none';
@@ -456,6 +503,17 @@ window.processPayment = function() {
                 orderStatusRef.off();
             }
         });
+
+        // Timeout: if machine doesn't respond within 8s, let user dismiss
+        setTimeout(function() {
+            if (!orderResolved) {
+                document.getElementById('successEmoji').textContent = '📦';
+                document.getElementById('successMsg').textContent = 'Order queued! Machine will dispense when it\u0027s back online.';
+                document.getElementById('successLoader').style.display = 'none';
+                document.getElementById('btnSuccessDone').style.display = 'inline-block';
+                orderStatusRef.off();
+            }
+        }, 8000);
 
         state.selectedCandy = null;
     }).catch(function(err) {

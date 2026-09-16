@@ -50,22 +50,22 @@ BTN_DEBOUNCE_MS = 50
 # price      : in rupees (must be a multiple of 5)
 # slot_index : index into SERVO_PINS list
 CANDIES = [
-    {"name": "Candy A", "price": 5,  "slot": 0},
-    {"name": "Candy B", "price": 10, "slot": 1},
-    {"name": "Candy C", "price": 15, "slot": 2},
+    {"name": "Kaccha Mango", "price": 5,  "slot": 0},
+    {"name": "Melody",       "price": 10, "slot": 1},
+    {"name": "Center Fresh", "price": 15, "slot": 2},
 ]
 
 # Coin denomination – every IR pulse = one coin of this value
 COIN_VALUE = 5  # Rs.5 per coin
 
 # ── WiFi ──────────────────────────────────────────────────────────────────
-WIFI_SSID     = "YOUR_WIFI_SSID"
-WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
+WIFI_SSID     = "abcd"
+WIFI_PASSWORD = "abcd1234"
 
 # ── Firebase Realtime Database ────────────────────────────────────────────
 # Paste your project's RTDB URL here (from Firebase Console → Realtime Database)
 # Example: "https://my-vending-default-rtdb.firebaseio.com"
-FIREBASE_URL = "https://YOUR-PROJECT-default-rtdb.firebaseio.com"
+FIREBASE_URL = "https://vending-6bced-default-rtdb.firebaseio.com"
 
 # ── Stock ─────────────────────────────────────────────────────────────────
 # Starting quantity for each candy slot (reset from dashboard or on boot)

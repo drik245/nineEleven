@@ -1,9 +1,6 @@
 ﻿# servo.py — Servo helper
-# Uses duty_ns() exactly as in project 44 (Smart Dustbin) on Shrike Fi
-# ─────────────────────────────────────────────────────────────────────────────
-from machine import Pin, PWM
 import time
-import config
+import firmware.config
 
 
 class Servo:
