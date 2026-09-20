@@ -93,10 +93,9 @@ _last_hb_tick  = 0
 _last_order_tick = 0
 ORDER_POLL_MS  = 5000   # check for web orders every 5s
 
-# Secret combo tracker
-# Sequence: UP, DOWN, LEFT, RIGHT, SELECT
-_COMBO_SEQ  = [BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT, BTN_SELECT]
-_combo_idx  = 0
+# Restock shortcut: hold LEFT+RIGHT together
+_restock_hold_ms = 0  # tracks how long both are held
+_RESTOCK_HOLD_THRESHOLD = 500  # ms to hold before restock opens
 
 # Restock sub-menu cursor
 _restock_cursor = 0
@@ -105,13 +104,13 @@ _restock_cursor = 0
 # State transitions
 
 def go_idle():
-    global state, selected, _last_coin_ct, _combo_idx
+    global state, selected, _last_coin_ct, _restock_hold_ms
     coins.disable()
     coins.reset()
-    selected      = None
-    _last_coin_ct = -1
-    _combo_idx    = 0
-    state         = STATE_IDLE
+    selected        = None
+    _last_coin_ct   = -1
+    _restock_hold_ms = 0
+    state           = STATE_IDLE
     oled_ui.show_idle(oled, cursor, stock)
 
 
@@ -248,30 +247,29 @@ while True:
 
     # IDLE
     if state == STATE_IDLE:
+        # Check LEFT+RIGHT held together for restock
+        left_held = _btn_pins[BTN_LEFT].value() == 0
+        right_held = _btn_pins[BTN_RIGHT].value() == 0
+        if left_held and right_held:
+            _restock_hold_ms += 10
+            if _restock_hold_ms >= _RESTOCK_HOLD_THRESHOLD:
+                _restock_hold_ms = 0
+                enter_restock()
+                continue
+        else:
+            _restock_hold_ms = 0
+
+        # Normal button navigation
         btn = any_btn_pressed()
         if btn >= 0:
-            # Secret combo check
-            if btn == _COMBO_SEQ[_combo_idx]:
-                _combo_idx += 1
-                if _combo_idx >= len(_COMBO_SEQ):
-                    _combo_idx = 0
-                    enter_restock()
-                    continue
-            else:
-                _combo_idx = 0
-                if btn == _COMBO_SEQ[0]:
-                    _combo_idx = 1
-
-            # Normal navigation (only if combo didn't trigger)
-            if state == STATE_IDLE:
-                if btn == BTN_UP:
-                    cursor = (cursor - 1) % num_candies
-                    oled_ui.show_idle(oled, cursor, stock)
-                elif btn == BTN_DOWN:
-                    cursor = (cursor + 1) % num_candies
-                    oled_ui.show_idle(oled, cursor, stock)
-                elif btn == BTN_SELECT:
-                    select_candy()
+            if btn == BTN_UP:
+                cursor = (cursor - 1) % num_candies
+                oled_ui.show_idle(oled, cursor, stock)
+            elif btn == BTN_DOWN:
+                cursor = (cursor + 1) % num_candies
+                oled_ui.show_idle(oled, cursor, stock)
+            elif btn == BTN_SELECT:
+                select_candy()
 
     # SELECTED
     elif state == STATE_SELECTED:

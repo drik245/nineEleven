@@ -12,6 +12,13 @@ except ImportError:
 
 _BASE = config.FIREBASE_URL.rstrip("/")
 
+# MicroPython epoch is 2000-01-01, JS/Unix is 1970-01-01
+_EPOCH_OFFSET = 946684800
+
+def _unix_time():
+    """Return Unix timestamp compatible with JS Date.now()/1000."""
+    return time.time() + _EPOCH_OFFSET
+
 # Fixed keys that match the dashboard (candy_a, candy_b, candy_c)
 _SLOT_KEYS = ["candy_a", "candy_b", "candy_c"]
 
@@ -98,7 +105,7 @@ def log_sale(candy_name, price):
     return _post("vending_machine/sales", {
         "candy": candy_name,
         "price": price,
-        "timestamp": time.time(),
+        "timestamp": _unix_time(),
     })
 
 
@@ -106,7 +113,7 @@ def heartbeat(total_revenue=0):
     """Update machine online status and revenue."""
     return _patch("vending_machine/status", {
         "online": True,
-        "last_seen": time.time(),
+        "last_seen": _unix_time(),
         "total_revenue": total_revenue,
     })
 
@@ -133,7 +140,7 @@ def complete_order(order_id):
     """Mark an order as completed after dispensing."""
     return _patch("vending_machine/orders/" + order_id, {
         "status": "completed",
-        "completed_at": time.time(),
+        "completed_at": _unix_time(),
     })
 
 
@@ -142,5 +149,5 @@ def fail_order(order_id, reason="out_of_stock"):
     return _patch("vending_machine/orders/" + order_id, {
         "status": "failed",
         "reason": reason,
-        "completed_at": time.time(),
+        "completed_at": _unix_time(),
     })

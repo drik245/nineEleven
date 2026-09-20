@@ -7,12 +7,23 @@ import config
 _wlan = network.WLAN(network.STA_IF)
 
 
+def _sync_ntp():
+    """Sync the RTC via NTP so time.time() returns correct values."""
+    try:
+        import ntptime
+        ntptime.settime()
+        print("NTP time synced")
+    except Exception as e:
+        print("NTP sync failed:", e)
+
+
 def connect(oled=None):
     """Connect to WiFi. Shows progress on OLED if passed.
     Returns True on success, False on timeout."""
     _wlan.active(True)
 
     if _wlan.isconnected():
+        _sync_ntp()
         return True
 
     if oled:
@@ -27,6 +38,7 @@ def connect(oled=None):
         if _wlan.isconnected():
             ip = _wlan.ifconfig()[0]
             print("WiFi connected:", ip)
+            _sync_ntp()
             if oled:
                 oled.fill(0)
                 oled.text("WiFi OK!", 0, 0)

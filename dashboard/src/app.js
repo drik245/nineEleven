@@ -95,7 +95,14 @@ function listenStatus() {
         var pill = document.getElementById('statusPill');
         var text = document.getElementById('statusText');
         var now = Date.now() / 1000;
-        state.isOnline = data.online && (now - (data.last_seen || 0) < 120);
+        var lastSeen = data.last_seen || 0;
+        // If last_seen is reasonable (after year 2020), check staleness
+        // Otherwise just trust the online flag (NTP might not have synced yet)
+        if (lastSeen > 1577836800) {
+            state.isOnline = data.online && (now - lastSeen < 300);
+        } else {
+            state.isOnline = !!data.online;
+        }
         if (state.isOnline) {
             pill.className = 'status-chip';
             text.textContent = 'Machine Online';
