@@ -1,8 +1,4 @@
-# wifi.py — WiFi connection helper for Shrike Fi (ESP32-S3)
-# ─────────────────────────────────────────────────────────────────────────────
-# Connects to the network defined in config.py.
-# Shows connection status on the OLED if provided.
-# ─────────────────────────────────────────────────────────────────────────────
+# wifi.py - WiFi connection helper for Shrike Fi (ESP32-S3)
 import network
 import time
 import config
@@ -12,10 +8,8 @@ _wlan = network.WLAN(network.STA_IF)
 
 
 def connect(oled=None):
-    """
-    Connect to WiFi. Shows progress on OLED if passed.
-    Returns True on success, False on timeout.
-    """
+    """Connect to WiFi. Shows progress on OLED if passed.
+    Returns True on success, False on timeout."""
     _wlan.active(True)
 
     if _wlan.isconnected():
@@ -29,7 +23,6 @@ def connect(oled=None):
 
     _wlan.connect(config.WIFI_SSID, config.WIFI_PASSWORD)
 
-    # Wait up to 15 seconds
     for i in range(30):
         if _wlan.isconnected():
             ip = _wlan.ifconfig()[0]
@@ -48,7 +41,6 @@ def connect(oled=None):
             oled.show()
         time.sleep_ms(500)
 
-    # Timeout
     print("WiFi connection failed")
     if oled:
         oled.fill(0)

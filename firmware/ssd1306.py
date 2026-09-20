@@ -1,6 +1,4 @@
-﻿# ssd1306.py — SSD1306 OLED driver (SPI + I2C)
-# Copied verbatim from Vicharak project 38 / 50 (confirmed working on Shrike Fi)
-# ─────────────────────────────────────────────────────────────────────────────
+# SSD1306 OLED driver (SPI + I2C)
 from micropython import const
 import framebuf
 

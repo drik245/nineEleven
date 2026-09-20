@@ -1,16 +1,6 @@
 """
-main.py — Candy Vending Machine with Firebase + Web Orders + Restock
+main.py - Candy Vending Machine with Firebase + Web Orders + Restock
 Board  : Vicharak Shrike Fi (ESP32-S3, MicroPython)
-
-Features:
-  - Coin-operated dispensing via IR sensor
-  - Web order dispensing via Firebase polling
-  - Secret restock combo: UP→DOWN→LEFT→RIGHT→SELECT (no hint on screen)
-  - Firebase stock sync + heartbeat
-
-State machine:
-  IDLE → SELECTED → COIN_WAIT → DISPENSING → DONE → IDLE
-  IDLE → RESTOCK (via secret combo) → IDLE
 """
 
 import time
@@ -24,7 +14,7 @@ import firebase
 from servo import make_servos
 from coin  import CoinCounter
 
-# ── State constants ───────────────────────────────────────────────────────
+# State constants
 STATE_IDLE       = 0
 STATE_SELECTED   = 1
 STATE_COIN_WAIT  = 2
@@ -32,8 +22,7 @@ STATE_DISPENSING = 3
 STATE_DONE       = 4
 STATE_RESTOCK    = 5
 
-# ── Hardware init ─────────────────────────────────────────────────────────
-
+# Hardware init
 spi  = SPI(1, baudrate=10_000_000,
            sck=Pin(config.OLED_SCK),
            mosi=Pin(config.OLED_MOSI),
@@ -91,11 +80,11 @@ def any_btn_pressed():
     return -1
 
 
-# ── Stock tracking ────────────────────────────────────────────────────────
+# Stock tracking
 stock         = list(config.INITIAL_STOCK)
 total_revenue = 0
 
-# ── State machine variables ───────────────────────────────────────────────
+# State machine variables
 state          = STATE_IDLE
 selected       = None
 cursor         = 0
@@ -104,16 +93,16 @@ _last_hb_tick  = 0
 _last_order_tick = 0
 ORDER_POLL_MS  = 5000   # check for web orders every 5s
 
-# ── Secret combo tracker ─────────────────────────────────────────────────
+# Secret combo tracker
 # Sequence: UP, DOWN, LEFT, RIGHT, SELECT
 _COMBO_SEQ  = [BTN_UP, BTN_DOWN, BTN_LEFT, BTN_RIGHT, BTN_SELECT]
-_combo_idx  = 0        # how far through the sequence we are
+_combo_idx  = 0
 
 # Restock sub-menu cursor
 _restock_cursor = 0
 
 
-# ── State transitions ────────────────────────────────────────────────────
+# State transitions
 
 def go_idle():
     global state, selected, _last_coin_ct, _combo_idx
@@ -154,9 +143,9 @@ def dispense_candy(candy_index):
     candy = config.CANDIES[candy_index]
 
     oled_ui.show_dispensing(oled, candy)
-    vibe_motor.value(1)  # Turn on vibration motor
+    vibe_motor.value(1)
     servos[candy["slot"]].dispense()
-    vibe_motor.value(0)  # Turn off vibration motor
+    vibe_motor.value(0)
 
     stock[candy_index] = max(0, stock[candy_index] - 1)
     total_revenue += candy["price"]
@@ -193,7 +182,6 @@ def do_restock(idx):
         firebase.update_stock(idx, stock[idx])
         oled_ui.show_restocked(oled, config.CANDIES[idx]["name"])
     else:
-        # Restock All
         for i in range(len(config.CANDIES)):
             stock[i] = config.INITIAL_STOCK[i]
             firebase.update_stock(i, stock[i])
@@ -202,7 +190,7 @@ def do_restock(idx):
     oled_ui.show_restock(oled, _restock_cursor, stock, config.INITIAL_STOCK)
 
 
-# ── Web order processing ─────────────────────────────────────────────────
+# Web order processing
 
 def process_web_orders():
     """Check Firebase for pending web orders and dispense."""
@@ -216,7 +204,6 @@ def process_web_orders():
         if stock[idx] <= 0:
             firebase.fail_order(order_id, "out_of_stock")
             continue
-        # Dispense!
         state = STATE_DISPENSING
         dispense_candy(idx)
         firebase.complete_order(order_id)
@@ -225,8 +212,8 @@ def process_web_orders():
         go_idle()
 
 
-# ── Boot sequence ─────────────────────────────────────────────────────────
-print("=== nineEleven — Shrike Fi ===")
+# Boot sequence
+print("=== nineEleven - Shrike Fi ===")
 
 wifi_ok = wifi.connect(oled)
 
@@ -246,28 +233,28 @@ if wifi_ok:
 go_idle()
 
 num_candies = len(config.CANDIES)
-num_restock_items = num_candies + 1  # candies + "Restock All"
+num_restock_items = num_candies + 1
 
-# ── Main loop ─────────────────────────────────────────────────────────────
+# Main loop
 while True:
     now = time.ticks_ms()
 
-    # ── Periodic heartbeat ────────────────────────────────────────────────
+    # Periodic heartbeat
     if time.ticks_diff(now, _last_hb_tick) > config.HEARTBEAT_INTERVAL_S * 1000:
         _last_hb_tick = now
         firebase.heartbeat(total_revenue)
 
-    # ── Poll for web orders (only in IDLE state) ─────────────────────────
+    # Poll for web orders (only in IDLE state)
     if state == STATE_IDLE:
         if time.ticks_diff(now, _last_order_tick) > ORDER_POLL_MS:
             _last_order_tick = now
             process_web_orders()
 
-    # ── IDLE ──────────────────────────────────────────────────────────────
+    # IDLE
     if state == STATE_IDLE:
         btn = any_btn_pressed()
         if btn >= 0:
-            # ── Secret combo check ────────────────────────────────────
+            # Secret combo check
             if btn == _COMBO_SEQ[_combo_idx]:
                 _combo_idx += 1
                 if _combo_idx >= len(_COMBO_SEQ):
@@ -276,11 +263,10 @@ while True:
                     continue
             else:
                 _combo_idx = 0
-                # Check if this wrong press is actually the start of a new combo
                 if btn == _COMBO_SEQ[0]:
                     _combo_idx = 1
 
-            # ── Normal navigation (only if combo didn't trigger) ──────
+            # Normal navigation (only if combo didn't trigger)
             if state == STATE_IDLE:
                 if btn == BTN_UP:
                     cursor = (cursor - 1) % num_candies
@@ -291,7 +277,7 @@ while True:
                 elif btn == BTN_SELECT:
                     select_candy()
 
-    # ── SELECTED ──────────────────────────────────────────────────────────
+    # SELECTED
     elif state == STATE_SELECTED:
         if btn_pressed(BTN_SELECT):
             start_coin_wait()
@@ -300,7 +286,7 @@ while True:
             time.sleep_ms(800)
             go_idle()
 
-    # ── COIN_WAIT ─────────────────────────────────────────────────────────
+    # COIN_WAIT
     elif state == STATE_COIN_WAIT:
         if btn_pressed(BTN_LEFT):
             oled_ui.show_cancelled(oled)
@@ -315,7 +301,7 @@ while True:
             if current_coins >= required_coins:
                 dispense()
 
-    # ── RESTOCK (secret menu) ─────────────────────────────────────────────
+    # RESTOCK (secret menu)
     elif state == STATE_RESTOCK:
         if btn_pressed(BTN_UP):
             _restock_cursor = (_restock_cursor - 1) % num_restock_items

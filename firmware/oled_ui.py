@@ -1,9 +1,5 @@
-# oled_ui.py — All OLED screen layouts for the vending machine
-# ─────────────────────────────────────────────────────────────────────────────
-# Nav-pad driven UI: UP/DOWN scroll cursor, SELECT confirms, LEFT cancels.
-# Supports sold-out display and WiFi status.
-# ─────────────────────────────────────────────────────────────────────────────
-import firmware.config
+# oled_ui.py - All OLED screen layouts for the vending machine
+import config
 
 
 def _center_x(text, char_w=8, screen_w=128):
@@ -15,22 +11,8 @@ def _coins_needed(price):
     return price // config.COIN_VALUE
 
 
-# ── Screen: Welcome / Idle (with cursor + stock) ─────────────────────────
-
 def show_idle(oled, cursor, stock=None):
-    """
-    Scrollable candy menu with cursor highlight and stock count.
-    stock: list of ints (qty per candy), or None to hide stock.
-
-    +-------------------+
-    |  nineEleven       |
-    |-------------------|
-    | > Candy A  Rs5 x8 |   ← cursor
-    |   Candy B Rs10 x3 |
-    |   Candy C Rs15  X |   ← sold out
-    | [^v]Sel  [OK]Buy  |
-    +-------------------+
-    """
+    """Scrollable candy menu with cursor highlight and stock count."""
     oled.fill(0)
 
     title = "nineEleven"
@@ -54,7 +36,6 @@ def show_idle(oled, cursor, stock=None):
             )
         oled.text(line, 0, y)
 
-        # Highlight bar for cursor
         if i == cursor:
             oled.rect(0, y - 1, 128, 11, 1)
 
@@ -62,12 +43,8 @@ def show_idle(oled, cursor, stock=None):
     oled.show()
 
 
-# ── Screen: Candy Selected ────────────────────────────────────────────────
-
 def show_selected(oled, candy, qty=None):
-    """
-    Confirmation screen after pressing SELECT.
-    """
+    """Confirmation screen after pressing SELECT."""
     oled.fill(0)
     oled.text("SELECTED:", 0, 0)
     oled.text(candy["name"], 0, 14)
@@ -90,12 +67,8 @@ def show_selected(oled, candy, qty=None):
     oled.show()
 
 
-# ── Screen: Coin Insertion Progress ──────────────────────────────────────
-
 def show_coin_wait(oled, candy, coins_so_far):
-    """
-    Live coin counter with progress bar.
-    """
+    """Live coin counter with progress bar."""
     oled.fill(0)
 
     header = "{} Rs.{}".format(candy["name"], candy["price"])
@@ -108,7 +81,6 @@ def show_coin_wait(oled, candy, coins_so_far):
     oled.text("Paid: Rs.{}".format(paid),  0, 14)
     oled.text("Need: Rs.{}".format(needed), 0, 26)
 
-    # Progress bar
     BAR_W = 118
     oled.rect(5, 38, BAR_W, 8, 1)
     filled = int(BAR_W * min(paid, needed) / needed)
@@ -118,8 +90,6 @@ def show_coin_wait(oled, candy, coins_so_far):
     oled.text("[<] Cancel", _center_x("[<] Cancel"), 52)
     oled.show()
 
-
-# ── Screen: Dispensing ────────────────────────────────────────────────────
 
 def show_dispensing(oled, candy):
     """Brief animation during servo movement."""
@@ -136,8 +106,6 @@ def show_dispensing(oled, candy):
         time.sleep_ms(100)
 
 
-# ── Screen: Done / Enjoy ──────────────────────────────────────────────────
-
 def show_done(oled, candy):
     oled.fill(0)
     oled.text("** ENJOY! **", _center_x("** ENJOY! **"), 10)
@@ -147,16 +115,12 @@ def show_done(oled, candy):
     oled.show()
 
 
-# ── Screen: Cancelled ────────────────────────────────────────────────────
-
 def show_cancelled(oled):
     oled.fill(0)
     oled.text("CANCELLED", _center_x("CANCELLED"), 20)
     oled.text("Returning...", _center_x("Returning..."), 40)
     oled.show()
 
-
-# ── Screen: Sold Out ─────────────────────────────────────────────────────
 
 def show_sold_out(oled, candy):
     oled.fill(0)
@@ -167,17 +131,11 @@ def show_sold_out(oled, candy):
     oled.show()
 
 
-# ── Screen: Restock (hidden menu) ────────────────────────────────────────
-
 def show_restock(oled, cursor, stock, initial):
-    """
-    Secret restock menu. cursor indexes into CANDIES + 1 extra 'Restock All' row.
-    """
+    """Secret restock menu."""
     oled.fill(0)
     oled.text("== RESTOCK ==", _center_x("== RESTOCK =="), 0)
     oled.hline(0, 10, 128, 1)
-
-    num_items = len(config.CANDIES) + 1  # +1 for "Restock All"
 
     for i, candy in enumerate(config.CANDIES):
         y = 14 + i * 12
@@ -187,7 +145,6 @@ def show_restock(oled, cursor, stock, initial):
         if i == cursor:
             oled.rect(0, y - 1, 128, 11, 1)
 
-    # "Restock All" option
     all_y = 14 + len(config.CANDIES) * 12
     prefix = ">" if cursor == len(config.CANDIES) else " "
     oled.text("{} Restock All".format(prefix), 0, all_y)
@@ -204,4 +161,3 @@ def show_restocked(oled, name):
     oled.text("RESTOCKED!", _center_x("RESTOCKED!"), 20)
     oled.text(name, _center_x(name), 38)
     oled.show()
-

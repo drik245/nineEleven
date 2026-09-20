@@ -64,10 +64,10 @@ Vending/
 │  5-Way Nav Buttons (pulled-up, press = LOW):                    │
 │    UP → IO14    DOWN → IO15    LEFT → IO16                      │
 │    RIGHT → IO17 (reserved)     SELECT → IO18                    │
-│                                                                 │
-│  Vibration Motor:                                               │
-│    Control Pin → IO11                                           │
-│                                                                 │
+│  Servos (PWM):                                                  │
+│    Candy A (Slot 0) → IO38                                      │
+│    Candy B (Slot 1) → IO37                                      │
+│    Candy C (Slot 2) → IO36                                      │
 │  Power:                                                         │
 │    Servo VCC → 5V     OLED VCC → 3.3V     All GNDs → GND       │
 └─────────────────────────────────────────────────────────────────┘

@@ -1,8 +1,6 @@
-# firebase.py — Lightweight Firebase Realtime Database client
-# ─────────────────────────────────────────────────────────────────────────────
+# firebase.py - Lightweight Firebase Realtime Database client
 # Uses the REST API via urequests. No SDK needed.
 # All calls are wrapped in try/except so the machine works offline.
-# ─────────────────────────────────────────────────────────────────────────────
 import ujson
 import time
 import config
@@ -10,7 +8,7 @@ import config
 try:
     import urequests as requests
 except ImportError:
-    import requests  # CPython fallback for testing
+    import requests
 
 _BASE = config.FIREBASE_URL.rstrip("/")
 
@@ -65,13 +63,8 @@ def _get(path):
         return None
 
 
-# ── Public API ────────────────────────────────────────────────────────────
-
 def init_stock(stock_list):
-    """
-    Set initial stock levels in Firebase.
-    stock_list: list of ints, one per candy in config.CANDIES order.
-    """
+    """Set initial stock levels in Firebase."""
     stock_data = {}
     for i, candy in enumerate(config.CANDIES):
         key = candy["name"].lower().replace(" ", "_")
@@ -91,10 +84,8 @@ def update_stock(candy_index, new_qty):
 
 
 def get_stock():
-    """
-    Fetch current stock from Firebase.
-    Returns list of qty ints in CANDIES order, or None on failure.
-    """
+    """Fetch current stock from Firebase.
+    Returns list of qty ints in CANDIES order, or None on failure."""
     data = _get("vending_machine/stock")
     if data is None:
         return None
@@ -125,17 +116,13 @@ def heartbeat(total_revenue=0):
 
 
 def set_offline():
-    """Mark machine as offline (call on clean shutdown if possible)."""
+    """Mark machine as offline."""
     return _patch("vending_machine/status", {"online": False})
 
 
-# ── Order Polling (for web UPI payments) ──────────────────────────────────
-
 def check_pending_orders():
-    """
-    Check for pending orders from web payments.
-    Returns list of (order_id, order_data) tuples, or empty list.
-    """
+    """Check for pending orders from web payments.
+    Returns list of (order_id, order_data) tuples, or empty list."""
     data = _get("vending_machine/orders")
     if data is None or not isinstance(data, dict):
         return []
@@ -161,4 +148,3 @@ def fail_order(order_id, reason="out_of_stock"):
         "reason": reason,
         "completed_at": time.time(),
     })
-

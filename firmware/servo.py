@@ -1,15 +1,11 @@
-﻿# servo.py — Servo helper
+# servo.py - Servo helper
 import time
-import firmware.config
+from machine import Pin, PWM
+import config
 
 
 class Servo:
-    """
-    Single servo wrapper.
-    pin_num  : GPIO number (ESP_IOxx)
-    rest_ns  : duty_ns for resting / locked position  (default 0 deg ~ 500 000 ns)
-    open_ns  : duty_ns for dispense position           (default 90 deg ~ 1 500 000 ns)
-    """
+    """Single servo wrapper."""
 
     def __init__(self, pin_num,
                  rest_ns=config.SERVO_REST_NS,
@@ -17,9 +13,7 @@ class Servo:
         self._pwm    = PWM(Pin(pin_num), freq=config.SERVO_FREQ)
         self._rest   = rest_ns
         self._open   = open_ns
-        self.lock()   # start in safe resting position
-
-    # ── Public API ───────────────────────────────────────────────────────
+        self.lock()
 
     def lock(self):
         """Move to resting / locked angle."""
@@ -30,12 +24,12 @@ class Servo:
         self._pwm.duty_ns(self._open)
         time.sleep_ms(config.DISPENSE_HOLD_MS)
         self._pwm.duty_ns(self._rest)
-        time.sleep_ms(200)   # let servo settle before next command
+        time.sleep_ms(200)
 
     def deinit(self):
         self._pwm.deinit()
 
 
 def make_servos():
-    """Return a list of Servo objects for all candy slots (order = config.SERVO_PINS)."""
+    """Return a list of Servo objects for all candy slots."""
     return [Servo(pin) for pin in config.SERVO_PINS]
