@@ -60,5 +60,5 @@ FIREBASE_URL = "https://vending-6bced-default-rtdb.firebaseio.com"
 # Stock
 INITIAL_STOCK = [10, 10, 10]   # Candy A, B, C
 
-# Heartbeat interval (seconds) - how often the machine pings Firebase
-HEARTBEAT_INTERVAL_S = 60
+# Heartbeat interval (seconds) - less frequent = less UI lag
+HEARTBEAT_INTERVAL_S = 300

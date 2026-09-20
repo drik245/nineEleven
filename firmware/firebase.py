@@ -5,6 +5,13 @@ import ujson
 import time
 import config
 
+# Prevent HTTP calls from blocking the main loop for too long
+try:
+    import usocket as socket
+    socket.setdefaulttimeout(3)
+except Exception:
+    pass
+
 try:
     import urequests as requests
 except ImportError:

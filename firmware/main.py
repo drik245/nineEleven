@@ -91,7 +91,7 @@ cursor         = 0
 _last_coin_ct  = -1
 _last_hb_tick  = 0
 _last_order_tick = 0
-ORDER_POLL_MS  = 5000   # check for web orders every 5s
+ORDER_POLL_MS  = 30000  # check for web orders every 30s (less blocking)
 
 # Restock shortcut: hold LEFT+RIGHT together
 _restock_hold_ms = 0  # tracks how long both are held
@@ -234,13 +234,13 @@ num_restock_items = num_candies + 1
 while True:
     now = time.ticks_ms()
 
-    # Periodic heartbeat
-    if time.ticks_diff(now, _last_hb_tick) > config.HEARTBEAT_INTERVAL_S * 1000:
+    # Periodic heartbeat (only if WiFi up)
+    if wifi.is_connected() and time.ticks_diff(now, _last_hb_tick) > config.HEARTBEAT_INTERVAL_S * 1000:
         _last_hb_tick = now
         firebase.heartbeat(total_revenue)
 
-    # Poll for web orders (only in IDLE state)
-    if state == STATE_IDLE:
+    # Poll for web orders (only in IDLE state and WiFi up)
+    if state == STATE_IDLE and wifi.is_connected():
         if time.ticks_diff(now, _last_order_tick) > ORDER_POLL_MS:
             _last_order_tick = now
             process_web_orders()
