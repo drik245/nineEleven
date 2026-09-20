@@ -1,4 +1,4 @@
-/* app.js - NineEleven Cute Candy Vending Machine */
+/* app.js - NineEleven Happi Loop–Inspired Landing Page */
 
 // ── State ──
 var state = {
@@ -10,32 +10,29 @@ var state = {
 
 var FIREBASE_URL = 'https://vending-6bced-default-rtdb.firebaseio.com';
 var EMOJIS = ['🍭', '🍫', '🍬', '🍩', '🍪', '🧁'];
-var AVATAR_COLORS = ['pink', 'purple', 'mint', 'peach', 'blue', 'coral'];
+var CARD_COLORS = ['purple', 'blue', 'orange', 'lime', 'pink', 'coral'];
+var CARD_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 var CANDY_COLORS_3D = [0xff6b9d, 0xc084fc, 0x34d399, 0xfbbf24, 0x60a5fa, 0xfb7185];
 
 // ── Boot ──
 window.addEventListener('DOMContentLoaded', function() {
     spawnParticles();
     initThreeScene();
+    initNavbar();
+    initScrollReveal();
 
     // Auto-connect to Firebase
     try {
         firebase.initializeApp({ databaseURL: FIREBASE_URL });
         state.db = firebase.database();
 
-        // Hide connect screen, show dashboard
-        var cs = document.getElementById('connectScreen');
-        if (cs) cs.style.display = 'none';
-        var dash = document.getElementById('dashboard');
-        if (dash) dash.style.display = '';
-
         seedInitialData();
         listenStock();
         listenStatus();
-
-        setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 150);
     } catch (e) {
         console.error('Firebase init failed:', e);
+        // Render fallback cards even without Firebase
+        renderFallbackCards();
     }
 });
 
@@ -44,18 +41,71 @@ function spawnParticles() {
     var container = document.getElementById('particles');
     if (!container) return;
     var candies = ['🍬', '🍭', '🍫', '🍩', '⭐', '✨', '💖'];
-    for (var i = 0; i < 15; i++) {
+    for (var i = 0; i < 12; i++) {
         var p = document.createElement('div');
         p.className = 'particle';
         p.textContent = candies[Math.floor(Math.random() * candies.length)];
         p.style.left = (Math.random() * 100) + '%';
-        p.style.animationDuration = (12 + Math.random() * 18) + 's';
+        p.style.animationDuration = (14 + Math.random() * 20) + 's';
         p.style.animationDelay = (Math.random() * 15) + 's';
         p.style.fontSize = (1 + Math.random() * 1.5) + 'rem';
         container.appendChild(p);
     }
 }
 
+// ── Navbar Scroll Effect ──
+function initNavbar() {
+    var navbar = document.getElementById('navbar');
+    var hamburger = document.getElementById('navHamburger');
+    var navLinks = document.getElementById('navLinks');
+
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    });
+
+    // Hamburger toggle
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', function() {
+            navLinks.classList.toggle('open');
+        });
+
+        // Close nav on link click
+        var links = navLinks.querySelectorAll('a');
+        for (var i = 0; i < links.length; i++) {
+            links[i].addEventListener('click', function() {
+                navLinks.classList.remove('open');
+            });
+        }
+    }
+}
+
+// ── Scroll Reveal ──
+function initScrollReveal() {
+    var revealElements = document.querySelectorAll('.about-cloud, .products-header, .product-grid, .feature-card, .cta-inner, .about-stats, .about-images');
+
+    revealElements.forEach(function(el) {
+        el.classList.add('reveal');
+    });
+
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    revealElements.forEach(function(el) {
+        observer.observe(el);
+    });
+}
+
+
+// ── Firebase Data ──
 function seedInitialData() {
     if (!state.db) return;
     state.db.ref('vending_machine/stock').once('value', function(snap) {
@@ -92,23 +142,16 @@ function listenStatus() {
     state.db.ref('vending_machine/status').on('value', function(snap) {
         var data = snap.val();
         if (!data) return;
-        var pill = document.getElementById('statusPill');
-        var text = document.getElementById('statusText');
         var now = Date.now() / 1000;
         state.isOnline = data.online && (now - (data.last_seen || 0) < 120);
-        if (state.isOnline) {
-            pill.className = 'status-chip';
-            text.textContent = 'Machine Online';
-        } else {
-            pill.className = 'status-chip offline';
-            text.textContent = 'Machine Offline';
-        }
     });
 }
 
-// ── Candy Cards ──
+
+// ── Candy Cards — Happi Loop Style ──
 function renderCandyCards(data) {
     var container = document.getElementById('candyList');
+    if (!container) return;
     container.innerHTML = '';
 
     var entries = Object.entries(data);
@@ -118,7 +161,8 @@ function renderCandyCards(data) {
         var qty = item.qty || 0;
         var soldOut = qty <= 0;
         var emoji = EMOJIS[i % EMOJIS.length];
-        var colorClass = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        var colorClass = CARD_COLORS[i % CARD_COLORS.length];
+        var letter = CARD_LETTERS[i % CARD_LETTERS.length];
 
         var stockLevel = 'high';
         if (qty <= 2) stockLevel = 'low';
@@ -126,6 +170,7 @@ function renderCandyCards(data) {
 
         var card = document.createElement('div');
         card.className = 'candy-card' + (soldOut ? ' sold-out' : '');
+        card.setAttribute('data-color', colorClass);
 
         if (!soldOut) {
             (function(k, idx) {
@@ -134,19 +179,33 @@ function renderCandyCards(data) {
         }
 
         var stockText = soldOut ? '❌ Sold out' : '✓ ' + qty + ' left';
-        var arrowText = soldOut ? '-' : '→';
 
-        card.innerHTML = '<div class="candy-avatar ' + colorClass + '">' + emoji + '</div>' +
+        card.innerHTML =
+            '<div class="candy-letter">' +
+                '<span>' + letter + '</span>' +
+                '<span class="candy-emoji">' + emoji + '</span>' +
+            '</div>' +
             '<div class="candy-details">' +
                 '<div class="name">' + (item.name || key) + '</div>' +
                 '<div class="price">₹' + (item.price || 0) + '</div>' +
                 '<div class="stock-pill ' + stockLevel + '">' + stockText + '</div>' +
             '</div>' +
-            '<div class="card-arrow">' + arrowText + '</div>';
+            '<button class="card-cart" aria-label="Add to cart">🛒</button>';
 
         container.appendChild(card);
     });
 }
+
+function renderFallbackCards() {
+    var fallback = {
+        candy_a: { name: 'Kaccha Mango',  price: 5,  qty: 10 },
+        candy_b: { name: 'Melody',        price: 10, qty: 10 },
+        candy_c: { name: 'Center Fresh',  price: 15, qty: 10 },
+        candy_d: { name: 'Choco Blast',   price: 20, qty: 8 }
+    };
+    renderCandyCards(fallback);
+}
+
 
 // ── Three.js 3D Machine ──
 var scene, camera, renderer, machineGroup;
@@ -159,21 +218,26 @@ function initThreeScene() {
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
+    renderer.setClearColor(0x000000, 0); // transparent background
     container.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xfff5fa);
+    // No opaque background — let the CSS gradient show through
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 
     var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
     dirLight.position.set(3, 6, 5);
     dirLight.castShadow = true;
     scene.add(dirLight);
 
-    var pinkLight = new THREE.PointLight(0xff6b9d, 0.6, 10);
-    pinkLight.position.set(-3, 2, 3);
-    scene.add(pinkLight);
+    var purpleLight = new THREE.PointLight(0xc084fc, 0.5, 10);
+    purpleLight.position.set(-3, 2, 3);
+    scene.add(purpleLight);
+
+    var yellowLight = new THREE.PointLight(0xfbbf24, 0.3, 10);
+    yellowLight.position.set(3, -1, 4);
+    scene.add(yellowLight);
 
     camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
     camera.position.set(0, 0.3, 5.5);
@@ -182,6 +246,9 @@ function initThreeScene() {
     scene.add(machineGroup);
 
     buildCuteMachine();
+
+    // Clone scene into features section viewport
+    cloneToFeaturesViewport();
 
     var resizeObserver = new ResizeObserver(function(entries) {
         for (var j = 0; j < entries.length; j++) {
@@ -218,10 +285,44 @@ function initThreeScene() {
     animate();
 }
 
+function cloneToFeaturesViewport() {
+    var container2 = document.getElementById('vendingScene2');
+    if (!container2 || !renderer) return;
+
+    // Create a second renderer for the features section
+    var renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer2.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer2.shadowMap.enabled = true;
+    renderer2.setClearColor(0x000000, 0);
+    container2.appendChild(renderer2.domElement);
+
+    var camera2 = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera2.position.set(0, 0.3, 5.5);
+
+    var resizeObserver2 = new ResizeObserver(function(entries) {
+        for (var j = 0; j < entries.length; j++) {
+            var rect = entries[j].contentRect;
+            if (rect.width > 0 && rect.height > 0) {
+                renderer2.setSize(rect.width, rect.height);
+                camera2.aspect = rect.width / rect.height;
+                camera2.updateProjectionMatrix();
+            }
+        }
+    });
+    resizeObserver2.observe(container2);
+
+    // Render loop for second viewport
+    function animate2() {
+        requestAnimationFrame(animate2);
+        renderer2.render(scene, camera2);
+    }
+    animate2();
+}
+
 function buildCuteMachine() {
     // ── Open-front body: back + sides + top/bottom (NO front face) ──
     var wallMat = new THREE.MeshPhongMaterial({
-        color: 0xfff0f5, specular: 0xffffff, shininess: 40,
+        color: 0x2d1b6e, specular: 0xffffff, shininess: 40,
         side: THREE.DoubleSide
     });
 
@@ -255,9 +356,9 @@ function buildCuteMachine() {
     bottomW.rotation.x = -Math.PI / 2;
     machineGroup.add(bottomW);
 
-    // Pink header
+    // Yellow header (brand strip)
     var headerGeo = new THREE.BoxGeometry(2.2, 0.35, 1.2);
-    var headerMat = new THREE.MeshPhongMaterial({ color: 0xff6b9d, specular: 0xffffff, shininess: 50 });
+    var headerMat = new THREE.MeshPhongMaterial({ color: 0xfbbf24, specular: 0xffffff, shininess: 50 });
     var header = new THREE.Mesh(headerGeo, headerMat);
     header.position.y = 1.75;
     machineGroup.add(header);
@@ -265,9 +366,9 @@ function buildCuteMachine() {
     // Glass panel
     var glassGeo = new THREE.PlaneGeometry(1.8, 2.4);
     var glassMat = new THREE.MeshPhongMaterial({
-        color: 0xe0f2fe,
+        color: 0xc084fc,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.12,
         specular: 0xffffff,
         shininess: 100,
         side: THREE.DoubleSide
@@ -276,8 +377,8 @@ function buildCuteMachine() {
     glass.position.set(0, 0.1, 0.61);
     machineGroup.add(glass);
 
-    // Pink frame edges
-    var frameMat = new THREE.MeshPhongMaterial({ color: 0xff6b9d });
+    // Frame edges (deep purple)
+    var frameMat = new THREE.MeshPhongMaterial({ color: 0x6c3fc5 });
     var tf = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.08), frameMat);
     tf.position.set(0, 1.34, 0.61); machineGroup.add(tf);
     var bf = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.08), frameMat);
@@ -288,7 +389,7 @@ function buildCuteMachine() {
     rf.position.set(0.97, 0.12, 0.61); machineGroup.add(rf);
 
     // Shelves
-    var shelfMat = new THREE.MeshPhongMaterial({ color: 0xfce7f3 });
+    var shelfMat = new THREE.MeshPhongMaterial({ color: 0x3b2d7e });
     candyMeshes = [];
 
     for (var row = 0; row < 3; row++) {
@@ -298,7 +399,7 @@ function buildCuteMachine() {
         shelf.receiveShadow = true;
         machineGroup.add(shelf);
 
-        // Main candy sphere (bigger, brighter)
+        // Main candy sphere
         var color = CANDY_COLORS_3D[row % CANDY_COLORS_3D.length];
         var candyGeo = new THREE.SphereGeometry(0.24, 32, 32);
         var candyMat = new THREE.MeshPhongMaterial({
@@ -323,7 +424,7 @@ function buildCuteMachine() {
         wrap.rotation.x = Math.PI / 2;
         machineGroup.add(wrap);
 
-        // Two smaller companion candies on each side
+        // Two smaller companion candies
         var sideColors = [CANDY_COLORS_3D[(row + 2) % CANDY_COLORS_3D.length], CANDY_COLORS_3D[(row + 3) % CANDY_COLORS_3D.length]];
         var sideOffsets = [-0.45, 0.45];
         for (var s = 0; s < 2; s++) {
@@ -346,7 +447,7 @@ function buildCuteMachine() {
 
     // Dispense slot
     var slotGeo = new THREE.BoxGeometry(1.2, 0.3, 0.12);
-    var slotMat = new THREE.MeshPhongMaterial({ color: 0x2d1b33 });
+    var slotMat = new THREE.MeshPhongMaterial({ color: 0x110b30 });
     var slot = new THREE.Mesh(slotGeo, slotMat);
     slot.position.set(0, -1.3, 0.58);
     machineGroup.add(slot);
@@ -365,7 +466,7 @@ function updateThreeSceneStock(data) {
     }
 }
 
-// ── Payment Flow (new QR every time) ──
+// ── Payment Flow (preserved from original) ──
 window.openPayModal = function(key, index) {
     if (!state.isOnline) {
         showToast('Machine is offline - order will be queued!', 'info');
@@ -379,7 +480,7 @@ window.openPayModal = function(key, index) {
     document.getElementById('payCandyName').textContent = item.name;
     document.getElementById('payAmount').textContent = '₹' + item.price;
 
-    // Generate a UNIQUE QR code each time with a timestamp nonce
+    // Generate unique QR code
     var nonce = Date.now();
     var upiString = 'upi://pay?pa=vendor@upi&pn=NineEleven&am=' + item.price +
                     '&cu=INR&tn=' + encodeURIComponent(item.name) +

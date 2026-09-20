@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍬 NineEleven - Sweet Treats!</title>
-    <meta name="description" content="Pick your favorite candy, scan to pay, and enjoy instant vending magic!">
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>🍬 NineEleven — Tap · Scan · Munch!</title>
+    <meta name="description" content="NineEleven smart candy vending — pick your favorite treat, scan to pay, and enjoy instant vending magic!">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,86 +13,232 @@
     <!-- Floating Candy Particles -->
     <div class="particles" id="particles"></div>
 
-    <!-- ═══════════════ CONNECT SCREEN ═══════════════ -->
-    <div class="connect-screen" id="connectScreen">
-        <div class="candy-rain" id="candyRain"></div>
+    <!-- ═══════════════ NAVBAR ═══════════════ -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-logo">
+                <span class="nav-logo-icon">🍬</span>
+                <span class="nav-logo-text">NineEleven</span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#hero">Home</a></li>
+                <li><a href="#menu">Menu</a></li>
+                <li><a href="#locations">Locations</a></li>
+                <li><a href="#how-it-works">How it Works</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <a href="#cta" class="nav-cta">Find a Machine</a>
+            <button class="nav-hamburger" id="navHamburger" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
 
-        <div class="connect-card">
-            <div class="mascot">
-                <div class="mascot-body">
-                    <div class="mascot-face">
-                        <div class="eye left"></div>
-                        <div class="eye right"></div>
-                        <div class="mouth"></div>
-                        <div class="blush left"></div>
-                        <div class="blush right"></div>
+    <!-- ═══════════════ HERO ═══════════════ -->
+    <section class="hero" id="hero">
+        <!-- Floating sticker badges -->
+        <div class="sticker sticker-1">🍬</div>
+        <div class="sticker sticker-2">🍭</div>
+        <div class="sticker sticker-3">😋</div>
+        <div class="sticker sticker-4">⭐</div>
+        <div class="sticker sticker-5">🍫</div>
+        <div class="sticker sticker-6">✨</div>
+
+        <div class="hero-inner">
+            <!-- Left column -->
+            <div class="hero-left">
+                <p class="hero-eyebrow">Smart Vending, Sweet Living 🍭</p>
+                <h1 class="hero-headline">
+                    <span class="hero-word-nine">Nine</span>
+                    <span class="hero-word-eleven">Eleven</span>
+                </h1>
+                <p class="hero-tagline">tap · scan · munch!</p>
+                <p class="hero-blurb">Your favorite candy, snacks & treats — dispensed instantly from our smart vending machines. Just tap, scan, and enjoy!</p>
+                <div class="hero-actions">
+                    <a href="#menu" class="btn-pill btn-pill--primary">
+                        Explore More
+                        <span class="btn-arrow">→</span>
+                    </a>
+                </div>
+                <!-- Hand-drawn arrow doodle -->
+                <svg class="hero-doodle-arrow" viewBox="0 0 120 80" fill="none">
+                    <path d="M10 60 Q30 10 70 30 Q110 50 100 15" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 4" fill="none"/>
+                    <path d="M95 10 L100 15 L90 18" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+            </div>
+
+            <!-- Center — 3D vending machine -->
+            <div class="hero-center">
+                <div class="hero-machine-glow"></div>
+                <div class="hero-machine-viewport" id="vendingScene"></div>
+            </div>
+
+            <!-- Right column -->
+            <div class="hero-right">
+                <p class="hero-right-label">Choose your treat</p>
+                <div class="hero-swatches">
+                    <div class="hero-swatch" style="--sw-color:#c084fc;">
+                        <img src="../images/candy.png" alt="Candy">
                     </div>
-                    <div class="mascot-wrapper"></div>
+                    <div class="hero-swatch" style="--sw-color:#60a5fa;">
+                        <img src="../images/candy_a.png" alt="Candy A">
+                    </div>
+                    <div class="hero-swatch" style="--sw-color:#fb923c;">
+                        <img src="../images/candy_b.png" alt="Candy B">
+                    </div>
+                    <div class="hero-swatch" style="--sw-color:#34d399;">
+                        <img src="../images/candy_c.png" alt="Candy C">
+                    </div>
                 </div>
-                <div class="mascot-shadow"></div>
-            </div>
-
-            <h1 class="connect-title">NineEleven</h1>
-            <p class="connect-subtitle">Your cute candy companion! 🍭</p>
-
-            <div class="connect-form">
-                <div class="input-wrapper">
-                    <span class="input-icon">🔗</span>
-                    <input type="url" id="firebaseUrlInput"
-                           placeholder="Paste Firebase URL here..."
-                           autocomplete="off">
-                </div>
-                <button id="btnConnect" onclick="connectFirebase()" class="btn-connect">
-                    <span class="btn-text">Connect Machine</span>
-                    <span class="btn-sparkle">✨</span>
-                </button>
-            </div>
-
-            <div class="connect-hint">
-                <span>🍬</span> Tip: Ask your vendor for the database link!
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- ═══════════════ MAIN DASHBOARD ═══════════════ -->
-    <div class="dashboard" id="dashboard" style="display:none;">
-
-        <!-- Top Bar -->
-        <header class="topbar">
-            <div class="topbar-left">
-                <div class="logo-candy">🍬</div>
-                <div>
-                    <h1 class="brand">NineEleven</h1>
-                    <p class="tagline">tap · scan · munch!</p>
+    <!-- ═══════════════ ABOUT ═══════════════ -->
+    <section class="about" id="about">
+        <div class="about-cloud">
+            <div class="about-text">
+                <h2 class="section-title">About <span class="gradient-text">NineEleven</span></h2>
+                <p class="about-desc">NineEleven brings instant snacking joy through smart vending machines. Tap to pay, scan to pick — and munch your favorite treats in seconds. No queues, no cash, just pure candy happiness!</p>
+            </div>
+            <div class="about-stats">
+                <div class="stat">
+                    <span class="stat-number">98%</span>
+                    <span class="stat-label">Uptime</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">5K+</span>
+                    <span class="stat-label">Treats Sold</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">4.9<small>★</small></span>
+                    <span class="stat-label">Customer Love</span>
                 </div>
             </div>
-            <div class="status-chip" id="statusPill">
-                <div class="status-dot"></div>
-                <span id="statusText">Connecting...</span>
+            <div class="about-images">
+                <div class="about-blob">
+                    <div class="blob-shape blob-shape--1"></div>
+                    <div class="blob-img-placeholder">🧒</div>
+                </div>
+                <div class="about-blob">
+                    <div class="blob-shape blob-shape--2"></div>
+                    <div class="blob-img-placeholder">🤳</div>
+                </div>
             </div>
-        </header>
+            <a href="#menu" class="btn-pill btn-pill--outline">Explore More <span class="btn-arrow">→</span></a>
+        </div>
+    </section>
 
-        <!-- Candy Shelf -->
-        <section class="candy-shelf">
-            <div class="shelf-header">
-                <h2>Pick Your Treat! <span class="wiggle">🍭</span></h2>
-                <p>Tap a candy to buy instantly</p>
+    <!-- ═══════════════ PRODUCT GRID ═══════════════ -->
+    <section class="products" id="menu">
+        <div class="products-inner">
+            <div class="products-header">
+                <h2 class="section-title">Discover The <span class="gradient-text">Sweet Squad</span></h2>
+                <p class="products-sub">Meet the candy crew! Our machine is packed with the tastiest treats — from tangy chews to chocolatey crunch.</p>
+            </div>
+            <div class="product-grid" id="candyList">
+                <!-- JS fills this dynamically from Firebase -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ MARQUEE TICKER ═══════════════ -->
+    <section class="marquee-section">
+        <div class="marquee-strip">
+            <div class="marquee-track">
+                <span>FOR EVERYONE 🍭</span>
+                <span>24/7 AVAILABLE 🍬</span>
+                <span>INSTANT VENDING ⭐</span>
+                <span>CASHLESS PAYMENT ✨</span>
+                <span>ALWAYS FRESH 🍫</span>
+                <span>FOR EVERYONE 🍭</span>
+                <span>24/7 AVAILABLE 🍬</span>
+                <span>INSTANT VENDING ⭐</span>
+                <span>CASHLESS PAYMENT ✨</span>
+                <span>ALWAYS FRESH 🍫</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FEATURES ═══════════════ -->
+    <section class="features" id="how-it-works">
+        <div class="features-inner">
+            <h2 class="section-title section-title--light">Where Snacking Meets <span class="text-yellow">Happiness</span></h2>
+            <p class="features-sub">Simple, smart, and satisfying. Our machines are built for the future of snacking — scan, tap, and treat yourself!</p>
+
+            <div class="features-grid">
+                <div class="feature-card feature-card--tl">
+                    <div class="feature-icon">💳</div>
+                    <h3>Instant Payment</h3>
+                    <p>Tap & scan UPI, no cash needed. Pay in a flash and get your treat!</p>
+                </div>
+                <div class="feature-card feature-card--tr">
+                    <div class="feature-icon">👀</div>
+                    <h3>Live Stock View</h3>
+                    <p>See what's inside before you visit. Real-time stock updates on every machine.</p>
+                </div>
+
+                <div class="features-center-machine">
+                    <div class="features-machine-glow"></div>
+                    <div class="features-machine-viewport" id="vendingScene2"></div>
+                </div>
+
+                <div class="feature-card feature-card--bl">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Fresh Restocks</h3>
+                    <p>Daily refills keep everything fresh. Never a stale snack in sight!</p>
+                </div>
+                <div class="feature-card feature-card--br">
+                    <div class="feature-icon">🌿</div>
+                    <h3>Eco Packaging</h3>
+                    <p>Sustainable wrappers and eco-friendly packaging for a greener munch.</p>
+                </div>
             </div>
 
-            <div class="candy-grid" id="candyList">
-                <!-- JS fills this -->
-            </div>
-        </section>
+            <a href="#cta" class="btn-pill btn-pill--yellow">Learn More <span class="btn-arrow">→</span></a>
+        </div>
+    </section>
 
-        <!-- 3D Preview -->
-        <section class="machine-section">
-            <div class="machine-label">
-                <div class="live-dot"></div>
-                Live Machine View
+    <!-- ═══════════════ CTA BANNER ═══════════════ -->
+    <section class="cta-section" id="cta">
+        <svg class="cta-wave" viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,80 1440,60 L1440,0 L0,0 Z" fill="#1a1145"/>
+        </svg>
+        <div class="cta-inner">
+            <h2 class="cta-headline">Fuel Your Cravings with <span class="gradient-text">NineEleven!</span></h2>
+            <p class="cta-sub">Grab a quick treat from our nearest machine. Scan, tap, and munch your way to happiness — anytime, anywhere.</p>
+            <a href="#hero" class="btn-pill btn-pill--primary btn-pill--lg">Find a Machine <span class="btn-arrow">→</span></a>
+        </div>
+    </section>
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer class="footer" id="contact">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <span class="nav-logo-icon">🍬</span>
+                    <span class="nav-logo-text">NineEleven</span>
+                </div>
+                <p class="footer-blurb">Smart vending for a sweeter world. We're committed to sustainability, freshness, and bringing a smile with every treat.</p>
             </div>
-            <div class="machine-viewport" id="vendingScene"></div>
-        </section>
-    </div>
+            <div class="footer-links" id="locations">
+                <h4>Quick Links</h4>
+                <a href="#hero">Home</a>
+                <a href="#menu">Menu</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <div class="footer-contact">
+                <h4>Find Us</h4>
+                <p>📍 Downtown Tech Park, Bangalore 560001</p>
+                <p>📧 hello@nineeleven.in</p>
+                <p>📞 +91 98765 43210</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 NineEleven. All rights reserved. Made with 🍬</p>
+        </div>
+    </footer>
 
     <!-- ═══════════════ PAY MODAL ═══════════════ -->
     <div class="modal-backdrop" id="payOverlay">
