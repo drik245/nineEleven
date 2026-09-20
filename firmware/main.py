@@ -218,14 +218,10 @@ print("=== nineEleven - Shrike Fi ===")
 wifi_ok = wifi.connect(oled)
 
 if wifi_ok:
-    remote_stock = firebase.get_stock()
-    if remote_stock is not None:
-        stock = remote_stock
-        print("Stock synced from Firebase:", stock)
-    else:
-        firebase.init_stock(config.INITIAL_STOCK)
-        stock = list(config.INITIAL_STOCK)
-        print("Initial stock pushed to Firebase")
+    # Push fresh stock to Firebase (fixes stale keys from old candy names)
+    firebase.init_stock(config.INITIAL_STOCK)
+    stock = list(config.INITIAL_STOCK)
+    print("Stock pushed to Firebase:", stock)
     firebase.heartbeat(total_revenue)
     _last_hb_tick = time.ticks_ms()
     _last_order_tick = time.ticks_ms()

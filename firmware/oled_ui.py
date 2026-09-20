@@ -12,7 +12,8 @@ def _coins_needed(price):
 
 
 def show_idle(oled, cursor, stock=None):
-    """Scrollable candy menu with cursor highlight and stock count."""
+    """Scrollable candy menu with cursor highlight and stock count.
+    Max 16 chars per line (128px / 8px)."""
     oled.fill(0)
 
     title = "nineEleven"
@@ -24,22 +25,25 @@ def show_idle(oled, cursor, stock=None):
         prefix = ">" if i == cursor else " "
 
         sold_out = stock is not None and stock[i] <= 0
+        name = candy["name"][:6]
 
         if sold_out:
-            line = "{} {:<7}SOLD OUT".format(prefix, candy["name"][:7])
+            # "> Kacch SOLD OUT" = 16 chars
+            line = "{}{:<6} SOLD OUT".format(prefix, name)
         else:
             qty_str = ""
             if stock is not None:
                 qty_str = "x{}".format(stock[i])
-            line = "{} {:<7}Rs{:<3}{}".format(
-                prefix, candy["name"][:7], candy["price"], qty_str
+            # "> Kacch Rs5  x10" = 16 chars
+            line = "{}{:<6} Rs{:<3}{}".format(
+                prefix, name, candy["price"], qty_str
             )
         oled.text(line, 0, y)
 
         if i == cursor:
             oled.rect(0, y - 1, 128, 11, 1)
 
-    oled.text("[^v]Sel  [OK]Buy", 0, 55)
+    oled.text("Select     Buy", 0, 55)
     oled.show()
 
 
@@ -47,23 +51,23 @@ def show_selected(oled, candy, qty=None):
     """Confirmation screen after pressing SELECT."""
     oled.fill(0)
     oled.text("SELECTED:", 0, 0)
-    oled.text(candy["name"], 0, 14)
+    oled.text(candy["name"][:16], 0, 14)
 
     price_str = "Price: Rs.{}".format(candy["price"])
     oled.text(price_str, 0, 28)
 
     if qty is not None:
-        oled.text("In stock: {}".format(qty), 0, 38)
+        oled.text("Stock: {}".format(qty), 0, 38)
     else:
         oled.hline(0, 38, 128, 1)
 
     coins = _coins_needed(candy["price"])
     if coins == 1:
-        oled.text("Insert 1 coin", 0, 42 if qty is None else 48)
+        oled.text("Insert 1 coin", 0, 48)
     else:
-        oled.text("Insert {} coins".format(coins), 0, 42 if qty is None else 48)
+        oled.text("Insert {} coins".format(coins), 0, 48)
 
-    oled.text("[OK]=Pay [<]=Back", 0, 55)
+    oled.text("Pay       Back", 0, 55)
     oled.show()
 
 
@@ -71,7 +75,7 @@ def show_coin_wait(oled, candy, coins_so_far):
     """Live coin counter with progress bar."""
     oled.fill(0)
 
-    header = "{} Rs.{}".format(candy["name"], candy["price"])
+    header = "{} Rs.{}".format(candy["name"][:10], candy["price"])
     oled.text(header, _center_x(header), 0)
     oled.hline(0, 10, 128, 1)
 
@@ -87,7 +91,7 @@ def show_coin_wait(oled, candy, coins_so_far):
     if filled > 0:
         oled.fill_rect(5, 38, filled, 8, 1)
 
-    oled.text("[<] Cancel", _center_x("[<] Cancel"), 52)
+    oled.text("Cancel", _center_x("Cancel"), 52)
     oled.show()
 
 
@@ -95,7 +99,7 @@ def show_dispensing(oled, candy):
     """Brief animation during servo movement."""
     oled.fill(0)
     oled.text("  DISPENSING  ", 0, 10)
-    oled.text(candy["name"], _center_x(candy["name"]), 28)
+    oled.text(candy["name"][:16], _center_x(candy["name"][:16]), 28)
 
     dots = ["[.  ]", "[.. ]", "[...]", "[ ..]", "[  .]"]
     for frame in dots:
@@ -110,7 +114,7 @@ def show_done(oled, candy):
     oled.fill(0)
     oled.text("** ENJOY! **", _center_x("** ENJOY! **"), 10)
     oled.hline(0, 22, 128, 1)
-    oled.text(candy["name"], _center_x(candy["name"]), 30)
+    oled.text(candy["name"][:16], _center_x(candy["name"][:16]), 30)
     oled.text("Thank you!", _center_x("Thank you!"), 48)
     oled.show()
 
@@ -126,7 +130,7 @@ def show_sold_out(oled, candy):
     oled.fill(0)
     oled.text("SOLD OUT!", _center_x("SOLD OUT!"), 10)
     oled.hline(0, 22, 128, 1)
-    oled.text(candy["name"], _center_x(candy["name"]), 30)
+    oled.text(candy["name"][:16], _center_x(candy["name"][:16]), 30)
     oled.text("Try another", _center_x("Try another"), 48)
     oled.show()
 
@@ -140,18 +144,19 @@ def show_restock(oled, cursor, stock, initial):
     for i, candy in enumerate(config.CANDIES):
         y = 14 + i * 12
         prefix = ">" if i == cursor else " "
-        line = "{} {:<8}{}/{}".format(prefix, candy["name"][:8], stock[i], initial[i])
+        name = candy["name"][:7]
+        line = "{}{:<7} {}/{}".format(prefix, name, stock[i], initial[i])
         oled.text(line, 0, y)
         if i == cursor:
             oled.rect(0, y - 1, 128, 11, 1)
 
     all_y = 14 + len(config.CANDIES) * 12
     prefix = ">" if cursor == len(config.CANDIES) else " "
-    oled.text("{} Restock All".format(prefix), 0, all_y)
+    oled.text("{}Restock All".format(prefix), 0, all_y)
     if cursor == len(config.CANDIES):
         oled.rect(0, all_y - 1, 128, 11, 1)
 
-    oled.text("[OK]=Set [<]=Exit", 0, 55)
+    oled.text("Set       Exit", 0, 55)
     oled.show()
 
 
@@ -159,5 +164,5 @@ def show_restocked(oled, name):
     """Flash confirmation after restocking."""
     oled.fill(0)
     oled.text("RESTOCKED!", _center_x("RESTOCKED!"), 20)
-    oled.text(name, _center_x(name), 38)
+    oled.text(name[:16], _center_x(name[:16]), 38)
     oled.show()

@@ -12,6 +12,9 @@ except ImportError:
 
 _BASE = config.FIREBASE_URL.rstrip("/")
 
+# Fixed keys that match the dashboard (candy_a, candy_b, candy_c)
+_SLOT_KEYS = ["candy_a", "candy_b", "candy_c"]
+
 
 def _url(path):
     """Build full Firebase REST URL for a given path."""
@@ -19,7 +22,6 @@ def _url(path):
 
 
 def _put(path, data):
-    """PUT (overwrite) data at path. Returns True on success."""
     try:
         r = requests.put(_url(path), json=data)
         r.close()
@@ -30,7 +32,6 @@ def _put(path, data):
 
 
 def _patch(path, data):
-    """PATCH (merge) data at path. Returns True on success."""
     try:
         r = requests.patch(_url(path), json=data)
         r.close()
@@ -41,7 +42,6 @@ def _patch(path, data):
 
 
 def _post(path, data):
-    """POST (push with auto-key) data at path. Returns True on success."""
     try:
         r = requests.post(_url(path), json=data)
         r.close()
@@ -52,7 +52,6 @@ def _post(path, data):
 
 
 def _get(path):
-    """GET data at path. Returns parsed JSON or None on failure."""
     try:
         r = requests.get(_url(path))
         data = r.json()
@@ -67,8 +66,7 @@ def init_stock(stock_list):
     """Set initial stock levels in Firebase."""
     stock_data = {}
     for i, candy in enumerate(config.CANDIES):
-        key = candy["name"].lower().replace(" ", "_")
-        stock_data[key] = {
+        stock_data[_SLOT_KEYS[i]] = {
             "name": candy["name"],
             "price": candy["price"],
             "qty": stock_list[i],
@@ -78,8 +76,7 @@ def init_stock(stock_list):
 
 def update_stock(candy_index, new_qty):
     """Update the quantity for a single candy slot."""
-    candy = config.CANDIES[candy_index]
-    key = candy["name"].lower().replace(" ", "_")
+    key = _SLOT_KEYS[candy_index]
     return _patch("vending_machine/stock/" + key, {"qty": new_qty})
 
 
@@ -90,9 +87,8 @@ def get_stock():
     if data is None:
         return None
     result = []
-    for candy in config.CANDIES:
-        key = candy["name"].lower().replace(" ", "_")
-        entry = data.get(key, {})
+    for i in range(len(config.CANDIES)):
+        entry = data.get(_SLOT_KEYS[i], {})
         result.append(entry.get("qty", 0))
     return result
 
@@ -142,7 +138,7 @@ def complete_order(order_id):
 
 
 def fail_order(order_id, reason="out_of_stock"):
-    """Mark an order as failed (e.g. sold out)."""
+    """Mark an order as failed."""
     return _patch("vending_machine/orders/" + order_id, {
         "status": "failed",
         "reason": reason,
