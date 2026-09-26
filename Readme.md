@@ -158,14 +158,14 @@ CANDIES = [
 
 ## 🔐 Secret Restock Combo
 
-Press buttons in this exact order while on the IDLE screen:
+While on the IDLE screen, hold **LEFT + RIGHT together** for half a second:
 
 ```
-UP → DOWN → LEFT → RIGHT → SELECT
+LEFT + RIGHT (hold ~500ms)
 ```
 
 - **No hint is shown on the OLED** — this is a discrete/hidden feature
-- Any wrong button press silently resets the tracker
+- Releasing either button early cancels the hold timer (resets to 0ms)
 - Once unlocked, the OLED shows a restock menu:
   - **UP/DOWN**: scroll through candy slots + "Restock All"
   - **SELECT**: reset selected slot to `INITIAL_STOCK` quantity
@@ -178,10 +178,9 @@ UP → DOWN → LEFT → RIGHT → SELECT
 
 ### Setup
 
-1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Create a new project (or use existing)
-3. Enable **Realtime Database** (NOT Firestore)
-4. Set database rules to open for development:
+1. Go to [Firebase Console](https://console.firebase.google.com) and create a new project (or use existing)
+2. Follow the [Realtime Database "Get Started" guide](https://firebase.google.com/docs/database/web/start) to create a **Realtime Database** (NOT Firestore)
+3. Set database rules to open for development:
    ```json
    {
      "rules": {
@@ -190,8 +189,8 @@ UP → DOWN → LEFT → RIGHT → SELECT
      }
    }
    ```
-5. Copy the database URL (e.g. `https://my-project-default-rtdb.firebaseio.com`)
-6. Paste into `firmware/config.py` as `FIREBASE_URL`
+4. Copy the database URL (e.g. `https://my-project-default-rtdb.firebaseio.com`)
+5. Paste into `firmware/config.py` as `FIREBASE_URL`
 
 > ⚠️ **Open rules are for prototyping only.** Add authentication rules before deploying publicly.
 
@@ -287,6 +286,41 @@ A **consumer-facing** web page where users can:
 
 This is a **simulated** payment flow — no real payment gateway is involved.
 
+### ⚠️ How this actually works (and why it's not production-safe)
+
+The QR code and "Pay on this device" button are cosmetic. When the user
+clicks **"Yes, Pay!"**, the browser writes `status: "pending"` straight to
+the Firebase Realtime Database itself — there is no payment gateway, no
+webhook, and nothing on the machine or in Firebase that confirms money
+actually changed hands. The UPI string encoded in the QR isn't linked back
+to the order at all; scanning and paying it doesn't touch Firebase in any
+way.
+
+Combined with the open database rules recommended in
+[Firebase Setup](#-firebase-integration) (`.read: true`, `.write: true`,
+no authentication), **anyone who has the Firebase URL can open the browser
+console (or use `curl`) and push a `pending` order directly, with no
+payment at all, and the machine will dispense candy for it.** The machine
+only trusts `candy_index` from the order (price/name are looked up
+server-side from `config.py`, so revenue *reporting* can't be spoofed) —
+but it never verifies that a real payment occurred before dispensing.
+
+This is fine for a demo/prototype, which is what this project currently
+is. **Do not point this dashboard at a machine with real inventory/money
+without fixing this first.** A real deployment needs:
+
+- A real payment gateway (Razorpay, PayU, Instamojo, etc.) whose
+  **server-side webhook** — not the browser — is the only thing allowed to
+  write `status: "pending"`/`"completed"` after actually verifying payment.
+- Firebase security rules that deny direct client writes to
+  `vending_machine/orders/*/status` and `vending_machine/stock`, restricting
+  writes to that same trusted backend (Cloud Function, or the payment
+  gateway's webhook handler).
+
+None of that backend/rules work exists in this repo yet — the dashboard
+and firmware here assume it will be added before going live with real
+money.
+
 ### Flow
 
 ```
@@ -311,7 +345,7 @@ This is a **simulated** payment flow — no real payment gateway is involved.
 3. Clicking either opens a **confirmation screen** with candy name + price
 4. User clicks **"Confirm & Pay"** → order written to Firebase as `status: "pending"`
 5. Website shows **"Dispensing..."** and listens for status change
-6. Machine polls `/orders/` every **5 seconds** → finds pending order → dispenses
+6. Machine polls `/orders/` every **30 seconds** (while IDLE) → finds pending order → dispenses
 7. Machine updates order to `status: "completed"`
 8. Website detects the change → shows **"✅ Your candy has been dispensed!"**
 
@@ -326,6 +360,8 @@ This is a **simulated** payment flow — no real payment gateway is involved.
 ## 🚀 Setup Guide (Step by Step)
 
 ### 1. Firebase Setup
+
+See the [Realtime Database "Get Started" guide](https://firebase.google.com/docs/database/web/start) for the full walkthrough, or the quick version:
 
 ```
 1. https://console.firebase.google.com → Create project
@@ -458,9 +494,9 @@ Hold time          = 600ms
 - Press = GPIO goes LOW (active LOW)
 
 ### Firebase Polling
-- Machine checks for web orders every **5 seconds** (`ORDER_POLL_MS = 5000`)
-- Heartbeat sent every **60 seconds** (`HEARTBEAT_INTERVAL_S = 60`)
-- Dashboard considers machine "offline" if `last_seen` is older than **120 seconds**
+- Machine checks for web orders every **30 seconds**, while IDLE (`ORDER_POLL_MS = 30000`)
+- Heartbeat sent every **300 seconds / 5 minutes** (`HEARTBEAT_INTERVAL_S = 300`)
+- Dashboard considers machine "offline" if `last_seen` is older than **300 seconds**
 
 ### Stock Sync
 - On boot: pulls stock from Firebase (or pushes initial stock if DB is empty)

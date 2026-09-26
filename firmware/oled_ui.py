@@ -1,4 +1,5 @@
 # oled_ui.py - All OLED screen layouts for the vending machine
+import time
 import config
 
 
@@ -8,7 +9,7 @@ def _center_x(text, char_w=8, screen_w=128):
 
 
 def _coins_needed(price):
-    return price // config.COIN_VALUE
+    return -(-price // config.COIN_VALUE)
 
 
 def show_idle(oled, cursor, stock=None):
@@ -106,7 +107,6 @@ def show_dispensing(oled, candy):
         oled.fill_rect(30, 48, 68, 10, 0)
         oled.text(frame, _center_x(frame), 48)
         oled.show()
-        import time
         time.sleep_ms(100)
 
 

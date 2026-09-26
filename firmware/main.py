@@ -91,13 +91,12 @@ cursor         = 0
 _last_coin_ct  = -1
 _last_hb_tick  = 0
 _last_order_tick = 0
-ORDER_POLL_MS  = 30000  # check for web orders every 30s (less blocking)
+ORDER_POLL_MS  = 30000
 
-# Restock shortcut: hold LEFT+RIGHT together
-_restock_hold_ms = 0  # tracks how long both are held
-_RESTOCK_HOLD_THRESHOLD = 500  # ms to hold before restock opens
+# Restock shortcut: hold LEFT+RIGHT together for _RESTOCK_HOLD_THRESHOLD ms
+_restock_hold_ms = 0
+_RESTOCK_HOLD_THRESHOLD = 500
 
-# Restock sub-menu cursor
 _restock_cursor = 0
 
 
@@ -217,10 +216,14 @@ print("=== nineEleven - Shrike Fi ===")
 wifi_ok = wifi.connect(oled)
 
 if wifi_ok:
-    # Push fresh stock to Firebase (fixes stale keys from old candy names)
-    firebase.init_stock(config.INITIAL_STOCK)
-    stock = list(config.INITIAL_STOCK)
-    print("Stock pushed to Firebase:", stock)
+    remote_stock = firebase.get_stock()
+    if remote_stock and len(remote_stock) == len(config.CANDIES):
+        stock = remote_stock
+        print("Stock restored from Firebase:", stock)
+    else:
+        firebase.init_stock(config.INITIAL_STOCK)
+        stock = list(config.INITIAL_STOCK)
+        print("Stock initialised in Firebase:", stock)
     firebase.heartbeat(total_revenue)
     _last_hb_tick = time.ticks_ms()
     _last_order_tick = time.ticks_ms()
@@ -287,7 +290,7 @@ while True:
             time.sleep_ms(800)
             go_idle()
         else:
-            required_coins = selected["price"] // config.COIN_VALUE
+            required_coins = -(-selected["price"] // config.COIN_VALUE)
             current_coins  = coins.count()
             if current_coins != _last_coin_ct:
                 _last_coin_ct = current_coins
